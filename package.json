@@ -1,0 +1,21 @@
+{
+  "name": "bolao",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run migrate -w @bolao/core",
+    "db:migrate:new": "npm run migrate:new -w @bolao/core --",
+    "db:reset": "npm run migrate:reset -w @bolao/core",
+    "db:generate": "npm run generate -w @bolao/core",
+    "db:check": "npm run check -w @bolao/core",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}
