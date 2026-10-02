@@ -18,3 +18,14 @@ model User {
 
   @@map("users")
 }
+
+model Team {
+  id         Int     @id @default(autoincrement())
+  externalId Int     @unique @map("external_id")
+  name       String
+  shortName  String  @map("short_name")
+  tla        String  @db.Char(3)
+  crestUrl   String? @map("crest_url")
+
+  @@map("teams")
+}
