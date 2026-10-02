@@ -29,8 +29,12 @@ npm run db:up        # sobe o Postgres 18 na porta 5433
 npm run db:migrate   # aplica as migrations e gera o Prisma Client
 ```
 
-Cada pacote tem o próprio `.env` (por exemplo `packages/core/.env`). A porta do Postgres no
-host muda com `POSTGRES_HOST_PORT`.
+Cada pacote tem o próprio `.env` (por exemplo `packages/core/.env`). Para usar outra porta no
+host, exporte `POSTGRES_HOST_PORT` antes do `db:up` **e** ajuste a porta em `DATABASE_URL` e
+`TEST_DATABASE_URL` no `packages/core/.env`.
+
+> Atualizando de uma versão antiga em que o serviço do compose se chamava `db`? Rode
+> `docker compose down --remove-orphans` uma vez antes do `db:up`.
 
 | Script                    | O que faz                                                                      |
 | ------------------------- | ------------------------------------------------------------------------------ |
