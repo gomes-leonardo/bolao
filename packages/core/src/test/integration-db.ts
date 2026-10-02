@@ -15,13 +15,19 @@ function requireUrl(name: string): URL {
 }
 
 const testUrl = requireUrl("TEST_DATABASE_URL");
-const devUrl = requireUrl("DATABASE_URL");
-const testDatabase = testUrl.pathname.slice(1);
+const databaseName = (url: URL) => decodeURIComponent(url.pathname.slice(1));
+const testDatabase = databaseName(testUrl);
 
-if (testUrl.host === devUrl.host && testUrl.pathname === devUrl.pathname) {
+if (testDatabase === databaseName(requireUrl("DATABASE_URL"))) {
   throw new Error(
     `TEST_DATABASE_URL aponta para o banco de desenvolvimento ("${testDatabase}"). ` +
       "Os testes de integração recriam esse banco do zero e apagariam seus dados.",
+  );
+}
+if (!testDatabase.endsWith("_test")) {
+  throw new Error(
+    `O banco de testes precisa terminar em "_test" (recebido: "${testDatabase}"). ` +
+      "A suíte apaga e recria esse banco a cada execução.",
   );
 }
 
@@ -40,12 +46,16 @@ async function withAdminClient(
 }
 
 const dropDatabase = (client: pg.Client) =>
-  client.query(`DROP DATABASE IF EXISTS "${testDatabase}" WITH (FORCE)`);
+  client.query(
+    `DROP DATABASE IF EXISTS ${client.escapeIdentifier(testDatabase)} WITH (FORCE)`,
+  );
 
 export async function setup(project: TestProject): Promise<void> {
   await withAdminClient(async (client) => {
     await dropDatabase(client);
-    await client.query(`CREATE DATABASE "${testDatabase}"`);
+    await client.query(
+      `CREATE DATABASE ${client.escapeIdentifier(testDatabase)}`,
+    );
   });
   execFileSync("npx", ["prisma", "migrate", "deploy"], {
     cwd: packageRoot,
@@ -54,7 +64,7 @@ export async function setup(project: TestProject): Promise<void> {
       DATABASE_URL: testUrl.toString(),
       PRISMA_HIDE_UPDATE_MESSAGE: "1",
     },
-    stdio: "pipe",
+    stdio: ["ignore", "inherit", "inherit"],
   });
   project.provide("testDatabaseUrl", testUrl.toString());
 }
