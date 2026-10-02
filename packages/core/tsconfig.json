@@ -6,5 +6,10 @@
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true
   },
-  "include": ["src", "scripts", "prisma.config.ts"]
+  "include": [
+    "src",
+    "prisma.config.ts",
+    "vitest.config.ts",
+    "vitest.config.integration.ts"
+  ]
 }

@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "prisma generate",
-    "migrate": "prisma migrate dev && prisma generate",
-    "migrate:new": "prisma migrate dev --create-only --name",
-    "migrate:reset": "prisma migrate reset --force",
-    "check": "node scripts/check-constraints.ts",
-    "typecheck": "tsc --noEmit"
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev && prisma generate",
+    "db:migrate:new": "prisma migrate dev --create-only --name",
+    "db:reset": "prisma migrate reset --force",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config ./vitest.config.integration.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
@@ -21,6 +23,7 @@
     "dotenv": "18.0.5",
     "pg": "8.23.1",
     "prisma": "7.10.0",
-    "typescript": "6.0.2"
+    "typescript": "6.0.2",
+    "vitest": "5.0.3"
   }
 }
