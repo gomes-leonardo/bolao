@@ -14,7 +14,7 @@ model User {
   email        String   @unique @db.Citext
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   ownedPools  Pool[]
   memberships PoolMember[]
@@ -48,7 +48,7 @@ model Match {
   homeScore  Int?     @map("home_score") @db.SmallInt
   awayScore  Int?     @map("away_score") @db.SmallInt
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
   awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
@@ -66,7 +66,7 @@ model Pool {
   ownerId    Int      @map("owner_id")
   season     Int      @db.SmallInt
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   owner   User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   members PoolMember[]
