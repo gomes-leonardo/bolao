@@ -17,6 +17,7 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   ownedPools  Pool[]
+  memberships PoolMember[]
 
   @@map("users")
 }
@@ -68,7 +69,21 @@ model Pool {
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   owner   User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  members PoolMember[]
 
   @@index([ownerId])
   @@map("pools")
+}
+
+model PoolMember {
+  poolId   Int      @map("pool_id")
+  userId   Int      @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz(3)
+
+  pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([poolId, userId])
+  @@index([userId])
+  @@map("pool_members")
 }
