@@ -8,6 +8,7 @@
     "migrate": "prisma migrate dev && prisma generate",
     "migrate:new": "prisma migrate dev --create-only --name",
     "migrate:reset": "prisma migrate reset --force",
+    "check": "node scripts/check-constraints.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
