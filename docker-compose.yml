@@ -1,0 +1,22 @@
+# Apenas para desenvolvimento local.
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bolao}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bolao}
+      POSTGRES_DB: ${POSTGRES_DB:-bolao}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      # A partir da imagem 18 o volume vai em /var/lib/postgresql, não em .../data
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
