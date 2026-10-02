@@ -1,19 +1,23 @@
-# Apenas para desenvolvimento local.
+# Apenas para desenvolvimento local. Credenciais fixas de dev; só as portas do host
+# são configuráveis, para não brigar com outro Postgres rodando na máquina.
+name: ${COMPOSE_PROJECT_NAME:-bolao}
+
 services:
-  db:
+  postgres:
     image: postgres:18-alpine
+    container_name: ${BOLAO_CONTAINER_PREFIX:-bolao}-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-bolao}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bolao}
-      POSTGRES_DB: ${POSTGRES_DB:-bolao}
+      POSTGRES_USER: bolao
+      POSTGRES_PASSWORD: bolao
+      POSTGRES_DB: bolao
     ports:
-      - "${POSTGRES_PORT:-5433}:5432"
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       # A partir da imagem 18 o volume vai em /var/lib/postgresql, não em .../data
       - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD", "pg_isready", "-U", "bolao", "-d", "bolao"]
       interval: 3s
       timeout: 3s
       retries: 10

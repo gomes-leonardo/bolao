@@ -8,14 +8,30 @@
   "engines": {
     "node": ">=22.18"
   },
+  "packageManager": "npm@11.8.0",
   "scripts": {
-    "db:up": "docker compose up -d --wait db",
+    "setup": "for f in */.env.example packages/*/.env.example; do [ -f \"$f\" ] && [ ! -f \"${f%.example}\" ] && cp \"$f\" \"${f%.example}\"; done; npm install",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:integration": "npm run test:integration --workspaces --if-present",
+    "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
-    "db:migrate": "npm run migrate -w @bolao/core",
-    "db:migrate:new": "npm run migrate:new -w @bolao/core --",
-    "db:reset": "npm run migrate:reset -w @bolao/core",
-    "db:generate": "npm run generate -w @bolao/core",
-    "db:check": "npm run check -w @bolao/core",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "db:migrate": "npm run db:migrate -w @bolao/core",
+    "db:migrate:new": "npm run db:migrate:new -w @bolao/core --",
+    "db:reset": "npm run db:reset -w @bolao/core",
+    "db:generate": "npm run db:generate -w @bolao/core"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "globals": "17.13.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.71.0"
   }
 }
