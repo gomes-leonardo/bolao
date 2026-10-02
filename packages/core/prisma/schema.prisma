@@ -27,5 +27,31 @@ model Team {
   tla        String  @db.Char(3)
   crestUrl   String? @map("crest_url")
 
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+
   @@map("teams")
+}
+
+model Match {
+  id         Int      @id @default(autoincrement())
+  externalId Int      @unique @map("external_id")
+  season     Int      @db.SmallInt
+  round      Int      @db.SmallInt
+  homeTeamId Int      @map("home_team_id")
+  awayTeamId Int      @map("away_team_id")
+  kickoffAt  DateTime @map("kickoff_at") @db.Timestamptz(3)
+  status     String   @default("scheduled")
+  homeScore  Int?     @map("home_score") @db.SmallInt
+  awayScore  Int?     @map("away_score") @db.SmallInt
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+
+  @@index([season, round])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@map("matches")
 }
