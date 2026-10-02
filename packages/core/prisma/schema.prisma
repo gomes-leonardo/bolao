@@ -16,6 +16,8 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  ownedPools  Pool[]
+
   @@map("users")
 }
 
@@ -54,4 +56,19 @@ model Match {
   @@index([homeTeamId])
   @@index([awayTeamId])
   @@map("matches")
+}
+
+model Pool {
+  id         Int      @id @default(autoincrement())
+  name       String
+  inviteCode String   @unique @map("invite_code")
+  ownerId    Int      @map("owner_id")
+  season     Int      @db.SmallInt
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  owner   User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@index([ownerId])
+  @@map("pools")
 }
