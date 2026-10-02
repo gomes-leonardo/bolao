@@ -21,24 +21,37 @@ web/            React (fase 5)
 
 ## Rodando localmente
 
-Requisitos: Node 22.18+ (roda TypeScript direto, sem build), Docker.
+Requisitos: Node 22.18+, Docker.
 
 ```bash
-cp .env.example .env
-npm install
+npm run setup        # copia os .env.example de cada pacote e instala as dependências
 npm run db:up        # sobe o Postgres 18 na porta 5433
 npm run db:migrate   # aplica as migrations e gera o Prisma Client
-npm run db:check     # valida as constraints do banco
 ```
 
-| Script | O que faz |
-| --- | --- |
-| `db:up` / `db:down` | sobe / derruba o Postgres |
-| `db:migrate` | aplica migrations pendentes (`prisma migrate dev`) |
-| `db:migrate:new <nome>` | gera uma migration a partir do schema **sem aplicar**, para editar o SQL antes |
-| `db:reset` | **apaga o banco** e reaplica todas as migrations. Só em dev |
-| `db:generate` | regenera o Prisma Client |
-| `db:check` | roda inserts válidos e inválidos contra o banco e confere as constraints |
+Cada pacote tem o próprio `.env` (por exemplo `packages/core/.env`). A porta do Postgres no
+host muda com `POSTGRES_HOST_PORT`.
+
+| Script                    | O que faz                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `setup`                   | cria os `.env` que faltam a partir dos `.env.example` e roda `npm install`     |
+| `lint` / `lint:fix`       | ESLint no monorepo                                                             |
+| `format` / `format:check` | Prettier no monorepo                                                           |
+| `typecheck`               | `tsc --noEmit` em cada pacote                                                  |
+| `test`                    | testes unitários (`*.spec.ts`) de todos os pacotes                             |
+| `test:integration`        | testes contra Postgres real (`*.integration.spec.ts`), precisa do `db:up`      |
+| `db:up` / `db:down`       | sobe / derruba o Postgres                                                      |
+| `db:migrate`              | aplica migrations pendentes (`prisma migrate dev`) e gera o client             |
+| `db:migrate:new <nome>`   | gera uma migration a partir do schema **sem aplicar**, para editar o SQL antes |
+| `db:reset`                | **apaga o banco** e reaplica todas as migrations. Só em dev                    |
+| `db:generate`             | regenera o Prisma Client                                                       |
+
+## Testes
+
+- **Unitários** (`*.spec.ts`) ficam ao lado do arquivo testado e não tocam o banco.
+- **Integração** (`*.integration.spec.ts`) rodam contra um banco dedicado, definido em
+  `TEST_DATABASE_URL`. Ele é criado do zero, recebe as migrations e é apagado no fim. Se apontar
+  para o banco de desenvolvimento, a suíte aborta antes de tocar em qualquer coisa.
 
 ## Migrations
 
