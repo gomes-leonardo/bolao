@@ -191,19 +191,54 @@ describe("importRound", () => {
     expect(await storedPoints()).toEqual([3]);
   });
 
-  it("não repontua um jogo encerrado que não mudou", async () => {
-    const finished = apiMatch({
-      status: "FINISHED",
-      score: { fullTime: { home: 2, away: 1 } },
-    });
-    await importRound(db, { season: 2026, matches: [finished] });
+  it("conserta um jogo encerrado que ficou sem pontos numa importação anterior", async () => {
+    await importRound(db, { season: 2026, matches: [apiMatch()] });
+    await predict(5001, 2, 1);
+    await sql.query(
+      "UPDATE matches SET status = 'finished', home_score = 2, away_score = 1 WHERE external_id = 5001",
+    );
 
     const summary = await importRound(db, {
       season: 2026,
-      matches: [finished],
+      matches: [
+        apiMatch({
+          status: "FINISHED",
+          score: { fullTime: { home: 2, away: 1 } },
+        }),
+      ],
     });
 
-    expect(summary.scored).toBe(0);
+    expect(summary.scored).toBe(1);
+    expect(await storedPoints()).toEqual([3]);
+  });
+
+  it("zera os pontos quando o jogo deixa de estar encerrado", async () => {
+    await importRound(db, { season: 2026, matches: [apiMatch()] });
+    await predict(5001, 2, 1);
+    await importRound(db, {
+      season: 2026,
+      matches: [
+        apiMatch({
+          status: "FINISHED",
+          score: { fullTime: { home: 2, away: 1 } },
+        }),
+      ],
+    });
+
+    await importRound(db, {
+      season: 2026,
+      matches: [
+        apiMatch({
+          status: "PAUSED",
+          score: { fullTime: { home: 1, away: 1 } },
+        }),
+      ],
+    });
+
+    expect(await storedMatches()).toEqual([
+      expect.objectContaining({ status: "live", home_score: 1, away_score: 1 }),
+    ]);
+    expect(await storedPoints()).toEqual([null]);
   });
 
   it("repontua quando o placar oficial é corrigido", async () => {

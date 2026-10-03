@@ -30,20 +30,19 @@ export async function importRound(
 ): Promise<ImportSummary> {
   const teams = uniqueTeams(matches);
 
-  const previous = await db.match.findMany({
-    where: { externalId: { in: matches.map((match) => match.id) } },
-    select: {
-      externalId: true,
-      status: true,
-      homeScore: true,
-      awayScore: true,
-    },
-  });
-  const previousByExternalId = new Map(
-    previous.map((match) => [match.externalId, match]),
-  );
-
   const stored = await db.$transaction(async (tx) => {
+    const finishedBefore = new Set(
+      (
+        await tx.match.findMany({
+          where: {
+            externalId: { in: matches.map((match) => match.id) },
+            status: "finished",
+          },
+          select: { externalId: true },
+        })
+      ).map((match) => match.externalId),
+    );
+
     const teamIds = new Map<number, number>();
     for (const team of teams) {
       const data = {
@@ -79,24 +78,25 @@ export async function importRound(
         homeScore: match.score.fullTime.home,
         awayScore: match.score.fullTime.away,
       };
-      result.push(
-        await tx.match.upsert({
-          where: { externalId: match.id },
-          create: { externalId: match.id, ...data },
-          update: data,
-          select: {
-            id: true,
-            externalId: true,
-            status: true,
-            homeScore: true,
-            awayScore: true,
-          },
-        }),
-      );
+      const saved = await tx.match.upsert({
+        where: { externalId: match.id },
+        create: { externalId: match.id, ...data },
+        update: data,
+        select: { id: true, status: true, homeScore: true, awayScore: true },
+      });
+      if (finishedBefore.has(match.id) && saved.status !== "finished") {
+        await tx.prediction.updateMany({
+          where: { matchId: saved.id },
+          data: { points: null },
+        });
+      }
+      result.push(saved);
     }
     return result;
   });
 
+  // Recalcula todo jogo encerrado da rodada: é idempotente e conserta uma
+  // importação anterior que caiu depois de gravar o jogo e antes de pontuar.
   let scored = 0;
   for (const match of stored) {
     if (
@@ -106,13 +106,6 @@ export async function importRound(
     ) {
       continue;
     }
-    const before = previousByExternalId.get(match.externalId);
-    const unchanged =
-      before?.status === "finished" &&
-      before.homeScore === match.homeScore &&
-      before.awayScore === match.awayScore;
-    if (unchanged) continue;
-
     await registerResult(db, {
       matchId: match.id,
       score: { home: match.homeScore, away: match.awayScore },
