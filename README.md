@@ -148,3 +148,10 @@ O `schema.prisma` não expressa `CHECK` nem extensões. Toda migration que preci
 O Prisma ignora esses objetos ao comparar schema e banco, então eles não geram drift.
 
 O Prisma Migrate é forward-only: desfazer uma migration já aplicada é escrever uma nova.
+
+## Decisões e dívidas
+
+- [ADRs](docs/adr/): monorepo com `core` em TS-fonte, Prisma com CHECKs à mão, palpite global com
+  pontos gravados, trava no SQL, costura da auth, polling em vez de tempo real e a identidade Carimbou.
+- [Dívida técnica e próximos passos](docs/divida-tecnica.md), incluindo o espaço "o que eu aprendi".
+- [Contrato da autenticação](docs/auth-contract.md) (fase 4).
