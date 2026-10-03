@@ -1,0 +1,525 @@
+{
+  "_aviso": "Amostra fictícia para desenvolvimento: ids, datas e placares inventados, no formato da football-data v4.",
+  "matches": [
+    {
+      "id": 980001,
+      "utcDate": "2026-09-27T19:00:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9001,
+        "name": "Corinthians",
+        "shortName": "Corinthians",
+        "tla": "COR",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9003,
+        "name": "Palmeiras",
+        "shortName": "Palmeiras",
+        "tla": "PAL",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 1,
+          "away": 1
+        }
+      }
+    },
+    {
+      "id": 980002,
+      "utcDate": "2026-09-27T21:30:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9005,
+        "name": "Santos",
+        "shortName": "Santos",
+        "tla": "SAN",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9008,
+        "name": "Flamengo",
+        "shortName": "Flamengo",
+        "tla": "FLA",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 0,
+          "away": 2
+        }
+      }
+    },
+    {
+      "id": 980003,
+      "utcDate": "2026-09-27T21:30:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9009,
+        "name": "Fluminense",
+        "shortName": "Fluminense",
+        "tla": "FLU",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9010,
+        "name": "Vasco da Gama",
+        "shortName": "Vasco",
+        "tla": "VAS",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 2,
+          "away": 0
+        }
+      }
+    },
+    {
+      "id": 980004,
+      "utcDate": "2026-09-28T16:00:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9011,
+        "name": "Bahia",
+        "shortName": "Bahia",
+        "tla": "BAH",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9014,
+        "name": "Cruzeiro",
+        "shortName": "Cruzeiro",
+        "tla": "CRU",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 1,
+          "away": 0
+        }
+      }
+    },
+    {
+      "id": 980005,
+      "utcDate": "2026-09-28T16:00:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9013,
+        "name": "Atlético Mineiro",
+        "shortName": "Atlético-MG",
+        "tla": "CAM",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9017,
+        "name": "Grêmio",
+        "shortName": "Grêmio",
+        "tla": "GRE",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 3,
+          "away": 1
+        }
+      }
+    },
+    {
+      "id": 980006,
+      "utcDate": "2026-09-28T18:30:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9018,
+        "name": "Internacional",
+        "shortName": "Internacional",
+        "tla": "INT",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9015,
+        "name": "Athletico Paranaense",
+        "shortName": "Athletico",
+        "tla": "CAP",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 2,
+          "away": 2
+        }
+      }
+    },
+    {
+      "id": 980007,
+      "utcDate": "2026-09-28T18:30:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9006,
+        "name": "São Paulo",
+        "shortName": "São Paulo",
+        "tla": "SAO",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9007,
+        "name": "Botafogo",
+        "shortName": "Botafogo",
+        "tla": "BOT",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 1,
+          "away": 2
+        }
+      }
+    },
+    {
+      "id": 980008,
+      "utcDate": "2026-09-28T20:30:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9004,
+        "name": "Red Bull Bragantino",
+        "shortName": "Bragantino",
+        "tla": "RBB",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9012,
+        "name": "Vitória",
+        "shortName": "Vitória",
+        "tla": "VIT",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 0,
+          "away": 0
+        }
+      }
+    },
+    {
+      "id": 980009,
+      "utcDate": "2026-09-28T20:30:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9016,
+        "name": "Coritiba",
+        "shortName": "Coritiba",
+        "tla": "CFC",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9019,
+        "name": "Remo",
+        "shortName": "Remo",
+        "tla": "REM",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 2,
+          "away": 1
+        }
+      }
+    },
+    {
+      "id": 980010,
+      "utcDate": "2026-09-28T20:30:00Z",
+      "status": "FINISHED",
+      "matchday": 27,
+      "homeTeam": {
+        "id": 9020,
+        "name": "Chapecoense",
+        "shortName": "Chapecoense",
+        "tla": "CHA",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9002,
+        "name": "Mirassol",
+        "shortName": "Mirassol",
+        "tla": "MIR",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": 0,
+          "away": 1
+        }
+      }
+    },
+    {
+      "id": 980011,
+      "utcDate": "2026-10-17T19:00:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9003,
+        "name": "Palmeiras",
+        "shortName": "Palmeiras",
+        "tla": "PAL",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9008,
+        "name": "Flamengo",
+        "shortName": "Flamengo",
+        "tla": "FLA",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980012,
+      "utcDate": "2026-10-17T21:30:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9007,
+        "name": "Botafogo",
+        "shortName": "Botafogo",
+        "tla": "BOT",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9001,
+        "name": "Corinthians",
+        "shortName": "Corinthians",
+        "tla": "COR",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980013,
+      "utcDate": "2026-10-17T21:30:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9014,
+        "name": "Cruzeiro",
+        "shortName": "Cruzeiro",
+        "tla": "CRU",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9009,
+        "name": "Fluminense",
+        "shortName": "Fluminense",
+        "tla": "FLU",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980014,
+      "utcDate": "2026-10-18T16:00:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9010,
+        "name": "Vasco da Gama",
+        "shortName": "Vasco",
+        "tla": "VAS",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9006,
+        "name": "São Paulo",
+        "shortName": "São Paulo",
+        "tla": "SAO",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980015,
+      "utcDate": "2026-10-18T16:00:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9017,
+        "name": "Grêmio",
+        "shortName": "Grêmio",
+        "tla": "GRE",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9018,
+        "name": "Internacional",
+        "shortName": "Internacional",
+        "tla": "INT",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980016,
+      "utcDate": "2026-10-18T18:30:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9015,
+        "name": "Athletico Paranaense",
+        "shortName": "Athletico",
+        "tla": "CAP",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9011,
+        "name": "Bahia",
+        "shortName": "Bahia",
+        "tla": "BAH",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980017,
+      "utcDate": "2026-10-18T18:30:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9012,
+        "name": "Vitória",
+        "shortName": "Vitória",
+        "tla": "VIT",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9013,
+        "name": "Atlético Mineiro",
+        "shortName": "Atlético-MG",
+        "tla": "CAM",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980018,
+      "utcDate": "2026-10-18T20:30:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9002,
+        "name": "Mirassol",
+        "shortName": "Mirassol",
+        "tla": "MIR",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9005,
+        "name": "Santos",
+        "shortName": "Santos",
+        "tla": "SAN",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980019,
+      "utcDate": "2026-10-18T20:30:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9019,
+        "name": "Remo",
+        "shortName": "Remo",
+        "tla": "REM",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9004,
+        "name": "Red Bull Bragantino",
+        "shortName": "Bragantino",
+        "tla": "RBB",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "id": 980020,
+      "utcDate": "2026-10-18T20:30:00Z",
+      "status": "TIMED",
+      "matchday": 28,
+      "homeTeam": {
+        "id": 9016,
+        "name": "Coritiba",
+        "shortName": "Coritiba",
+        "tla": "CFC",
+        "crest": null
+      },
+      "awayTeam": {
+        "id": 9020,
+        "name": "Chapecoense",
+        "shortName": "Chapecoense",
+        "tla": "CHA",
+        "crest": null
+      },
+      "score": {
+        "fullTime": {
+          "home": null,
+          "away": null
+        }
+      }
+    }
+  ]
+}
