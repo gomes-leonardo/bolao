@@ -92,4 +92,38 @@ describe("parseMatches", () => {
       parseMatches({ matches: [{ ...apiMatch, status: "HALFTIME" }] }),
     ).toThrow(FootballDataError);
   });
+
+  it("rejeita jogo encerrado sem placar", () => {
+    const finishedWithoutScore = {
+      ...apiMatch,
+      status: "FINISHED",
+      score: { fullTime: { home: null, away: null } },
+    };
+
+    expect(() => parseMatches({ matches: [finishedWithoutScore] })).toThrow(
+      /5001.*encerrado sem placar/s,
+    );
+  });
+
+  it("rejeita placar com só um lado preenchido", () => {
+    const halfScore = {
+      ...apiMatch,
+      status: "IN_PLAY",
+      score: { fullTime: { home: 1, away: null } },
+    };
+
+    expect(() => parseMatches({ matches: [halfScore] })).toThrow(
+      /5001.*placar incompleto/s,
+    );
+  });
+
+  it("aceita jogo agendado sem placar", () => {
+    const scheduled = {
+      ...apiMatch,
+      status: "TIMED",
+      score: { fullTime: { home: null, away: null } },
+    };
+
+    expect(parseMatches({ matches: [scheduled] })).toHaveLength(1);
+  });
 });

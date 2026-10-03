@@ -23,20 +23,37 @@ const teamSchema = z
   })
   .transform((team) => ({ ...team, shortName: team.shortName ?? team.name }));
 
-const matchSchema = z.object({
-  id: z.number().int(),
-  utcDate: z.iso.datetime(),
-  status: z.enum(apiStatuses),
-  matchday: z.number().int().min(1).max(38),
-  homeTeam: teamSchema,
-  awayTeam: teamSchema,
-  score: z.object({
-    fullTime: z.object({
-      home: z.number().int().nullable(),
-      away: z.number().int().nullable(),
+const finishedStatuses: readonly string[] = ["FINISHED", "AWARDED"];
+
+const matchSchema = z
+  .object({
+    id: z.number().int(),
+    utcDate: z.iso.datetime(),
+    status: z.enum(apiStatuses),
+    matchday: z.number().int().min(1).max(38),
+    homeTeam: teamSchema,
+    awayTeam: teamSchema,
+    score: z.object({
+      fullTime: z.object({
+        home: z.number().int().min(0).nullable(),
+        away: z.number().int().min(0).nullable(),
+      }),
     }),
-  }),
-});
+  })
+  .superRefine((match, ctx) => {
+    const { home, away } = match.score.fullTime;
+    if ((home === null) !== (away === null)) {
+      ctx.addIssue({
+        code: "custom",
+        message: `jogo ${match.id} com placar incompleto`,
+      });
+    } else if (home === null && finishedStatuses.includes(match.status)) {
+      ctx.addIssue({
+        code: "custom",
+        message: `jogo ${match.id} encerrado sem placar`,
+      });
+    }
+  });
 
 const matchesSchema = z.object({ matches: z.array(matchSchema) });
 
