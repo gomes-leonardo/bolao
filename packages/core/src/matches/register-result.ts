@@ -1,5 +1,5 @@
 import type { Db } from "../db.ts";
-import { Prisma } from "../generated/prisma/client.ts";
+import { Prisma } from "../prisma.ts";
 import { scorePrediction, type Score } from "../scoring/score-prediction.ts";
 
 export class MatchNotFoundError extends Error {
