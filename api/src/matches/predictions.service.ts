@@ -8,7 +8,7 @@ import type {
 import { conflict, notFound } from "../common/errors.js";
 import { DB } from "../db/db.module.js";
 import { MembershipService } from "../membership/membership.service.js";
-import { isLocked, predictionSelect, toPredictionView } from "./match-view.js";
+import { predictionSelect, toPredictionView } from "./match-view.js";
 import { MatchesService } from "./matches.service.js";
 
 interface UpsertedRow {
@@ -72,12 +72,13 @@ export class PredictionsService {
   ): Promise<WallView> {
     await this.membership.requireMember(poolId, userId);
     const match = await this.matches.byId(userId, matchId);
-    if (
-      !isLocked(
-        { status: match.status, kickoffAt: new Date(match.kickoffAt) },
-        new Date(),
-      )
-    ) {
+    // Mesmo predicado e mesmo relógio (o do Postgres) da trava em upsert():
+    // se o relógio da API adiantasse, daria para espiar o muro e ainda editar.
+    const [lock] = await this.db.$queryRaw<{ locked: boolean }[]>`
+      SELECT NOT (status = 'scheduled' AND kickoff_at > now()) AS locked
+        FROM matches
+       WHERE id = ${matchId}`;
+    if (!lock?.locked) {
       throw conflict(
         "PREDICTIONS_HIDDEN",
         "Os palpites da galera aparecem quando a bola rolar.",
