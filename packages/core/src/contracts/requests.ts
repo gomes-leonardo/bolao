@@ -41,7 +41,10 @@ export const roundQuerySchema = z.object({
 });
 export type RoundQueryInput = z.infer<typeof roundQuerySchema>;
 
+export const MAX_ID = 2_147_483_647;
+
 export const idParamSchema = z.coerce
   .number({ error: "Id inválido." })
   .int("Id inválido.")
-  .positive("Id inválido.");
+  .positive("Id inválido.")
+  .max(MAX_ID, "Id inválido.");

@@ -5,7 +5,7 @@ import {
   HttpException,
   Logger,
 } from "@nestjs/common";
-import type { ApiError, ApiErrorCode } from "@bolao/core/contracts";
+import type { ApiError } from "@bolao/core/contracts";
 import type { Response } from "express";
 import { AppError } from "./errors.js";
 
@@ -14,11 +14,33 @@ export interface ErrorResponse {
   body: ApiError;
 }
 
-const codeByStatus: Record<number, ApiErrorCode> = {
-  400: "VALIDATION_FAILED",
-  401: "UNAUTHENTICATED",
-  404: "NOT_FOUND",
+const clientErrors: Record<number, ApiError["error"]> = {
+  400: { code: "VALIDATION_FAILED", message: "JSON inválido." },
+  401: { code: "UNAUTHENTICATED", message: "Faz login pra continuar." },
+  404: { code: "NOT_FOUND", message: "Rota não encontrada." },
+  413: {
+    code: "PAYLOAD_TOO_LARGE",
+    message: "Corpo da requisição grande demais.",
+  },
 };
+
+/** Status de erros do Nest e dos erros "expostos" do body-parser (JSON grande, por exemplo). */
+function clientStatusOf(exception: unknown): number | undefined {
+  const status =
+    exception instanceof HttpException
+      ? exception.getStatus()
+      : typeof exception === "object" &&
+          exception !== null &&
+          "expose" in exception &&
+          exception.expose === true &&
+          "status" in exception &&
+          typeof exception.status === "number"
+        ? exception.status
+        : undefined;
+  return status !== undefined && status >= 400 && status < 500
+    ? status
+    : undefined;
+}
 
 export function toErrorResponse(exception: unknown): ErrorResponse {
   if (exception instanceof AppError) {
@@ -29,17 +51,13 @@ export function toErrorResponse(exception: unknown): ErrorResponse {
     if (exception.details) error.details = exception.details;
     return { status: exception.status, body: { error } };
   }
-  if (exception instanceof HttpException) {
-    const status = exception.getStatus();
-    return {
-      status,
-      body: {
-        error: {
-          code: codeByStatus[status] ?? "INTERNAL_ERROR",
-          message: exception.message,
-        },
-      },
+  const status = clientStatusOf(exception);
+  if (status !== undefined) {
+    const error = clientErrors[status] ?? {
+      code: "BAD_REQUEST",
+      message: "Requisição inválida.",
     };
+    return { status, body: { error } };
   }
   return {
     status: 500,

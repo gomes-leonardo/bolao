@@ -12,6 +12,8 @@ export type ApiErrorCode =
   | "PREDICTIONS_HIDDEN"
   | "ALREADY_MEMBER"
   | "OWNER_CANNOT_LEAVE"
+  | "PAYLOAD_TOO_LARGE"
+  | "BAD_REQUEST"
   | "INTERNAL_ERROR";
 
 export interface ApiError {

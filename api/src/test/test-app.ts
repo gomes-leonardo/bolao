@@ -20,6 +20,7 @@ export interface RequestOptions {
 
 export interface TestApp {
   db: Db;
+  baseUrl: string;
   request<T = unknown>(
     method: string,
     path: string,
@@ -44,6 +45,7 @@ export async function createTestApp(): Promise<TestApp> {
 
   return {
     db,
+    baseUrl,
     async request<T>(
       method: string,
       path: string,

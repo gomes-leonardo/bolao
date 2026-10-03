@@ -39,6 +39,24 @@ describe("toErrorResponse", () => {
     expect(response.body.error.code).toBe(code);
   });
 
+  it("traduz o erro de corpo grande demais do body-parser", () => {
+    const tooLarge = Object.assign(new Error("request entity too large"), {
+      status: 413,
+      expose: true,
+      type: "entity.too.large",
+    });
+
+    expect(toErrorResponse(tooLarge)).toEqual({
+      status: 413,
+      body: {
+        error: {
+          code: "PAYLOAD_TOO_LARGE",
+          message: "Corpo da requisição grande demais.",
+        },
+      },
+    });
+  });
+
   it("não vaza detalhes de erro inesperado", () => {
     expect(
       toErrorResponse(new Error("connection refused at 10.0.0.3")),

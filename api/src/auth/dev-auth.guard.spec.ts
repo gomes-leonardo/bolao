@@ -47,7 +47,7 @@ describe("DevAuthGuard", () => {
     await expect(result).rejects.toThrow(/AUTH_MODE=dev/);
   });
 
-  it.each([undefined, "", "abc", "0", "-3", "1.5"])(
+  it.each([undefined, "", "abc", "0", "-3", "1.5", "99999999999"])(
     "recusa header inválido: %s",
     async (header) => {
       const { sut, context } = makeSut(header === undefined ? {} : { header });

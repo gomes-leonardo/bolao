@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { Db } from "@bolao/core";
+import { MAX_ID } from "@bolao/core/contracts";
 import type { Request } from "express";
 import { unauthenticated } from "../common/errors.js";
 import { DB } from "../db/db.module.js";
@@ -40,7 +41,7 @@ export class DevAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<Request>();
     const id = Number(request.header(DEV_USER_HEADER));
-    if (!Number.isInteger(id) || id < 1) {
+    if (!Number.isInteger(id) || id < 1 || id > MAX_ID) {
       throw unauthenticated(
         "Envie o header X-Dev-User-Id com o id do usuário.",
       );
