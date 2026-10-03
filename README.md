@@ -8,7 +8,7 @@ Projeto de estudo do roadmap Full Stack do [roadmap.sh](https://roadmap.sh/full-
 
 - **API:** NestJS + Prisma + PostgreSQL
 - **CLI:** Node + commander (importa jogos e registra resultados)
-- **Web:** React + Vite + TypeScript + Tailwind
+- **Web:** React 19 + Vite + TypeScript + Tailwind 4 + TanStack Query + React Router
 
 ## Estrutura
 
@@ -16,6 +16,7 @@ Projeto de estudo do roadmap Full Stack do [roadmap.sh](https://roadmap.sh/full-
 packages/core   regra de negócio compartilhada + schema e migrations do Prisma
 cli/            importa jogos da football-data e registra resultados
 api/            API REST em NestJS
+web/            front em React + Vite + Tailwind (identidade Carimbou)
 docs/           contrato da autenticação (fase 4)
 web/            React (fase 5)
 ```
@@ -113,6 +114,25 @@ curl localhost:3333/api/pools -H 'X-Dev-User-Id: <id>'
 - **Quem não é membro** recebe `404`, para não revelar que o bolão existe.
 - **A trava do palpite** é checada no mesmo comando SQL que grava, então não há janela entre checar e
   gravar.
+
+## Web
+
+```bash
+npm run dev          # API (3333) e web (http://localhost:5174) juntos
+```
+
+Configuração em `web/.env`. Com `VITE_AUTH_MODE=dev`, a tela de login mostra o **modo dev**: entra com
+o id de um usuário do `db:seed`. O login com e-mail e senha já chama `/auth/login` e
+`/auth/register` (contrato da fase 4) e avisa enquanto essas rotas não existem.
+
+- **Identidade:** tokens de cor, fonte e animação no `@theme` de `web/src/styles.css` (Tailwind 4).
+  Design no [Claude Design](https://claude.ai/artifact/KVYbVSHby5PLrw9t1PWU7t).
+- **Organização:** `components/` só renderiza (props e callbacks); `features/*/use*.ts` cuida de dados e
+  estado (TanStack Query); `pages/` liga os dois; `api/` é o único lugar que fala HTTP.
+- **Contratos:** os tipos de resposta, os schemas dos formulários e a regra de pontos (projeção do muro
+  da galera) vêm de `@bolao/core`. O front não reimplementa nada disso.
+- **Tempo real:** sem WebSocket/SSE nesta etapa. A rodada e o muro são buscados de novo a cada 30 s
+  enquanto há jogo ao vivo.
 
 ## Testes
 
