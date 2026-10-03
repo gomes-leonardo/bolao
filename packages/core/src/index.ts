@@ -1,4 +1,5 @@
 export { createDb, type Db } from "./db.ts";
+export { matchStatuses, type MatchStatus } from "./matches/match-status.ts";
 export {
   MatchNotFoundError,
   registerResult,
