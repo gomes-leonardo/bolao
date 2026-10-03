@@ -18,6 +18,7 @@ model User {
 
   ownedPools  Pool[]
   memberships PoolMember[]
+  predictions Prediction[]
 
   @@map("users")
 }
@@ -50,8 +51,9 @@ model Match {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
-  awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+  homeTeam    Team         @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam    Team         @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+  predictions Prediction[]
 
   @@index([season, round])
   @@index([homeTeamId])
@@ -86,4 +88,22 @@ model PoolMember {
   @@id([poolId, userId])
   @@index([userId])
   @@map("pool_members")
+}
+
+model Prediction {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  matchId   Int      @map("match_id")
+  homeScore Int      @map("home_score") @db.SmallInt
+  awayScore Int      @map("away_score") @db.SmallInt
+  points    Int?     @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, matchId])
+  @@index([matchId])
+  @@map("predictions")
 }

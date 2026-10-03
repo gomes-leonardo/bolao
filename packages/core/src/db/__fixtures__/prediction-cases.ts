@@ -16,6 +16,7 @@ export const predictionCases: ConstraintCase[] = [
     name: "um palpite por usuário por jogo",
     sql: insert(`(1, 1, 1, 0, now()), (1, 1, 2, 2, now())`),
     expect: "unique_violation",
+    constraint: "predictions_user_id_match_id_key",
   },
   {
     table: "predictions",
@@ -28,12 +29,14 @@ export const predictionCases: ConstraintCase[] = [
     name: "placar negativo é rejeitado",
     sql: insert(`(1, 1, -1, 0, now())`),
     expect: "check_violation",
+    constraint: "predictions_scores_range",
   },
   {
     table: "predictions",
     name: "placar acima de 99 é rejeitado",
     sql: insert(`(1, 1, 100, 0, now())`),
     expect: "check_violation",
+    constraint: "predictions_scores_range",
   },
   {
     table: "predictions",
@@ -46,6 +49,7 @@ export const predictionCases: ConstraintCase[] = [
     name: "pontos só podem ser 0, 1 ou 3",
     sql: `${insert(`(1, 1, 2, 1, now())`)}; UPDATE predictions SET points = 2 WHERE user_id = 1`,
     expect: "check_violation",
+    constraint: "predictions_points_valid",
   },
   {
     table: "predictions",
@@ -58,12 +62,14 @@ export const predictionCases: ConstraintCase[] = [
     name: "jogo inexistente é rejeitado",
     sql: insert(`(1, 999, 1, 0, now())`),
     expect: "foreign_key_violation",
+    constraint: "predictions_match_id_fkey",
   },
   {
     table: "predictions",
     name: "não apaga jogo que tem palpites",
     sql: `${insert(`(1, 1, 1, 0, now())`)}; DELETE FROM matches WHERE id = 1`,
     expect: "restrict_violation",
+    constraint: "predictions_match_id_fkey",
   },
   {
     table: "predictions",
