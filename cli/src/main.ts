@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { createDb, type Db, type Score } from "@bolao/core";
 import { Command } from "commander";
 import {
@@ -31,7 +32,12 @@ async function loadMatches(options: {
   file?: string;
 }): Promise<FootballDataMatch[]> {
   if (options.file) {
-    const all = parseMatches(JSON.parse(await readFile(options.file, "utf8")));
+    // npm -w roda o script dentro de cli/; INIT_CWD é onde o comando foi digitado.
+    const path = resolve(
+      process.env["INIT_CWD"] ?? process.cwd(),
+      options.file,
+    );
+    const all = parseMatches(JSON.parse(await readFile(path, "utf8")));
     return all.filter((match) => match.matchday === options.round);
   }
   return fetchRound({

@@ -1,9 +1,13 @@
-import {
-  MatchNotFoundError,
-  registerResult,
-  type Db,
-  type Score,
-} from "@bolao/core";
+import { registerResult, type Db, type Score } from "@bolao/core";
+
+export class UnknownExternalMatchError extends Error {
+  constructor(externalId: number) {
+    super(
+      `Nenhum jogo com o id ${externalId} da football-data. Rodou o import?`,
+    );
+    this.name = "UnknownExternalMatchError";
+  }
+}
 
 export class MatchNotStartedError extends Error {
   constructor(externalId: number, kickoffAt: Date) {
@@ -28,7 +32,7 @@ export async function registerManualResult(
     where: { externalId },
     select: { id: true, kickoffAt: true },
   });
-  if (!match) throw new MatchNotFoundError(externalId);
+  if (!match) throw new UnknownExternalMatchError(externalId);
   if (match.kickoffAt > now)
     throw new MatchNotStartedError(externalId, match.kickoffAt);
 

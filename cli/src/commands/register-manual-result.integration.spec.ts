@@ -1,4 +1,4 @@
-import { createDb, MatchNotFoundError } from "@bolao/core";
+import { createDb } from "@bolao/core";
 import { resetDatabase } from "@bolao/core/testing";
 import pg from "pg";
 import {
@@ -13,6 +13,7 @@ import {
 import {
   MatchNotStartedError,
   registerManualResult,
+  UnknownExternalMatchError,
 } from "./register-manual-result.ts";
 
 const db = createDb(inject("testDatabaseUrl"));
@@ -77,6 +78,6 @@ describe("registerManualResult", () => {
         score: { home: 1, away: 0 },
         now,
       }),
-    ).rejects.toThrow(MatchNotFoundError);
+    ).rejects.toThrow(UnknownExternalMatchError);
   });
 });
