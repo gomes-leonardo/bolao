@@ -7,9 +7,9 @@ import type {
   PoolSummary,
   RankingView,
 } from "@bolao/core/contracts";
-import { Prisma } from "@bolao/core/prisma";
 import { conflict, forbidden, notFound } from "../common/errors.js";
 import { paginated, skipOf } from "../common/pagination.js";
+import { violatedUniqueConstraint } from "../common/prisma-errors.js";
 import { currentSeason } from "../common/season.js";
 import { DB } from "../db/db.module.js";
 import { MatchesService } from "../matches/matches.service.js";
@@ -18,11 +18,6 @@ import { RankingService } from "../ranking/ranking.service.js";
 import { generateInviteCode } from "./invite-code.js";
 
 const MAX_INVITE_CODE_ATTEMPTS = 5;
-
-const isUniqueViolation = (error: unknown, field: string) =>
-  error instanceof Prisma.PrismaClientKnownRequestError &&
-  error.code === "P2002" &&
-  JSON.stringify(error.meta ?? {}).includes(field);
 
 @Injectable()
 export class PoolsService {
@@ -48,12 +43,9 @@ export class PoolsService {
         });
         return this.summary(userId, pool.id);
       } catch (error) {
-        if (
-          !isUniqueViolation(error, "invite_code") ||
-          attempt >= MAX_INVITE_CODE_ATTEMPTS
-        ) {
-          throw error;
-        }
+        const codeTaken =
+          violatedUniqueConstraint(error) === "pools_invite_code_key";
+        if (!codeTaken || attempt >= MAX_INVITE_CODE_ATTEMPTS) throw error;
       }
     }
   }
@@ -103,21 +95,17 @@ export class PoolsService {
   async join(userId: number, inviteCode: string): Promise<PoolSummary> {
     const pool = await this.db.pool.findUnique({
       where: { inviteCode },
-      select: {
-        id: true,
-        members: { where: { userId }, select: { userId: true } },
-      },
+      select: { id: true },
     });
     if (!pool)
       throw notFound("POOL_NOT_FOUND", "Nenhum bolão com esse código.");
-    if (pool.members.length > 0) throw this.alreadyMember();
 
-    try {
-      await this.db.poolMember.create({ data: { poolId: pool.id, userId } });
-    } catch (error) {
-      if (isUniqueViolation(error, "pool_id")) throw this.alreadyMember();
-      throw error;
-    }
+    // INSERT ... ON CONFLICT DO NOTHING: dois cliques simultâneos não viram erro 500.
+    const { count } = await this.db.poolMember.createMany({
+      data: [{ poolId: pool.id, userId }],
+      skipDuplicates: true,
+    });
+    if (count === 0) throw conflict("ALREADY_MEMBER", "Tu já tá nesse bolão.");
     return this.summary(userId, pool.id);
   }
 
@@ -243,9 +231,5 @@ export class PoolsService {
         },
       ];
     });
-  }
-
-  private alreadyMember() {
-    return conflict("ALREADY_MEMBER", "Tu já tá nesse bolão.");
   }
 }

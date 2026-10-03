@@ -201,6 +201,24 @@ describe("POST /pools/join", () => {
     expect(response.body.error.code).toBe("ALREADY_MEMBER");
   });
 
+  it("dois cliques simultâneos: um entra, o outro recebe 409", async () => {
+    const pool = await seedPool(app.db, ana);
+    const join = () =>
+      app.request<ApiError>("POST", "/pools/join", {
+        as: beto,
+        body: { inviteCode: pool.inviteCode },
+      });
+
+    const responses = await Promise.all([join(), join(), join()]);
+
+    expect(responses.map((response) => response.status).sort()).toEqual([
+      200, 409, 409,
+    ]);
+    expect(await app.db.poolMember.count({ where: { poolId: pool.id } })).toBe(
+      2,
+    );
+  });
+
   it("avisa quando o código não existe", async () => {
     const response = await app.request<ApiError>("POST", "/pools/join", {
       as: beto,
