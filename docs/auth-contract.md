@@ -18,6 +18,11 @@ contrato. Enquanto ela não existe, a API roda com `AUTH_MODE=dev` e aceita o he
   - cookie `httpOnly; Secure; SameSite=Strict` em `/api/auth`, protegido de XSS; ou
   - corpo da resposta, guardado pelo front, que é mais simples e mais exposto.
 
+Se escolher o cookie: a API precisa de `enableCors({ origin, credentials: true })` (em
+`api/src/app.setup.ts`) e o front de `fetch(..., { credentials: "include" })` (em
+`web/src/api/client.ts`). Portas diferentes de `localhost` contam como o mesmo site, então
+`SameSite=Strict` continua funcionando em dev.
+
 ## Tabela nova
 
 Migration `create_refresh_tokens`, seguindo o fluxo do README (`db:migrate:new`, editar o SQL,
