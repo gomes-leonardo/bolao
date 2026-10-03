@@ -62,10 +62,14 @@ npm run cli -- import -r 27 -s 2026 -f cli/fixtures/bsa-2026-amostra.json   # se
 npm run cli -- result --match 980011 2-1         # placar final digitado à mão
 ```
 
-- `import` cria ou atualiza times e jogos (é seguro rodar de novo). Jogos que chegam encerrados
-  já têm os palpites pontuados. Se o placar oficial mudar depois, os pontos são recalculados.
+- `import` cria ou atualiza times e jogos (é seguro rodar de novo). Todo jogo encerrado da
+  rodada tem os palpites recalculados a cada import. Se um jogo deixa de estar encerrado
+  (atraso da API, jogo anulado), os pontos dele voltam a ficar vazios.
+- **A football-data é a fonte da verdade.** O `result` manual é o plano B para quando a API está
+  fora, e o próximo `import` sobrescreve o que foi digitado à mão.
 - `result` encerra um jogo pelo id da football-data e recalcula os pontos. Recusa jogo que ainda
   não começou.
+- Jogo adiado (`POSTPONED`) fica com os palpites travados até a API remarcar a data.
 - Status da football-data: `TIMED` vira agendado; `IN_PLAY`, `PAUSED` e `SUSPENDED` viram ao vivo
   (jogo interrompido não pontua até ter resultado final); `AWARDED` (W.O.) pontua pelo placar
   oficial.
