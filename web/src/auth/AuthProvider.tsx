@@ -8,6 +8,7 @@ import {
   createContext,
   type ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -20,11 +21,19 @@ import {
   writeSession,
 } from "./session";
 
-export type AuthStatus = "loading" | "authenticated" | "anonymous";
+/**
+ * anonymous     sem sessão, ou a API recusou a sessão (401)
+ * loading       há sessão e o /me ainda não respondeu
+ * authenticated o /me respondeu com o usuário
+ * error         há sessão, mas o /me falhou por outro motivo (API fora, 500)
+ */
+export type AuthStatus = "loading" | "authenticated" | "anonymous" | "error";
 
 export interface AuthContextValue {
   user: UserView | null;
   status: AuthStatus;
+  error: unknown;
+  retry: () => void;
   signInAsDevUser: (userId: number) => Promise<void>;
   signIn: (input: LoginInput) => Promise<void>;
   signUp: (input: RegisterInput) => Promise<void>;
@@ -35,6 +44,9 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const ME_QUERY_KEY = ["me"] as const;
 
+const isUnauthorized = (error: unknown) =>
+  error instanceof ApiRequestError && error.status === 401;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(readSession);
@@ -43,9 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ME_QUERY_KEY,
     queryFn: api.me,
     enabled: session !== null,
-    retry: (failures, error) =>
-      !(error instanceof ApiRequestError && error.status === 401) &&
-      failures < 2,
   });
 
   const start = useCallback(
@@ -63,6 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     queryClient.clear();
   }, [queryClient]);
+
+  // Sessão recusada pela API: o status já vira "anonymous" no render; o efeito só
+  // apaga a credencial guardada (sistema externo) para não repetir o 401.
+  const rejected = session !== null && isUnauthorized(me.error);
+  useEffect(() => {
+    if (rejected) clearSession();
+  }, [rejected]);
 
   const signInAsDevUser = useCallback(
     async (userId: number) => {
@@ -96,25 +112,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [start],
   );
 
-  const unauthorized =
-    me.error instanceof ApiRequestError && me.error.status === 401;
   const status: AuthStatus =
-    session === null || unauthorized
+    session === null || rejected
       ? "anonymous"
       : me.data
         ? "authenticated"
-        : "loading";
+        : me.isError
+          ? "error"
+          : "loading";
+
+  const retry = useCallback(() => void me.refetch(), [me]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user: status === "authenticated" ? (me.data ?? null) : null,
       status,
+      error: status === "error" ? me.error : null,
+      retry,
       signInAsDevUser,
       signIn,
       signUp,
       signOut,
     }),
-    [me.data, status, signInAsDevUser, signIn, signUp, signOut],
+    [
+      me.data,
+      me.error,
+      status,
+      retry,
+      signInAsDevUser,
+      signIn,
+      signUp,
+      signOut,
+    ],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

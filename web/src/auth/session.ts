@@ -18,8 +18,9 @@ function isSession(value: unknown): value is Session {
   return false;
 }
 
-// O storage pode lançar (aba anônima, cota cheia); sem ele a sessão só não persiste.
-export function readSession(): Session | null {
+// A sessão vive em memória; o storage só a persiste entre recarregamentos.
+// Ele pode lançar (aba anônima, cota cheia): sem ele, a sessão vale até recarregar.
+function loadStoredSession(): Session | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
@@ -29,15 +30,23 @@ export function readSession(): Session | null {
   }
 }
 
+let current: Session | null = loadStoredSession();
+
+export function readSession(): Session | null {
+  return current;
+}
+
 export function writeSession(session: Session): void {
+  current = session;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   } catch {
-    // Segue sem persistir: a sessão vale só até recarregar a página.
+    // Sem persistência: a sessão em memória continua valendo.
   }
 }
 
 export function clearSession(): void {
+  current = null;
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
