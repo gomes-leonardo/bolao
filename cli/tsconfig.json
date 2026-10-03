@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": [
+    "src",
+    "vitest.config.ts",
+    "vitest.config.integration.ts",
+    "../packages/core/src/test/integration-db.ts"
+  ]
+}
