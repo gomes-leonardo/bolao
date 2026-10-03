@@ -100,9 +100,12 @@ A fase 4 cria um `JwtAuthGuard`, que valida o `Bearer`, preenche `request.user` 
 respeita `@Public()`, e troca o provider no `AuthModule`. **Nenhum controller ou service muda.**
 Mantenha o `DevAuthGuard` só se ele continuar bloqueado fora de `AUTH_MODE=dev`, ou apague.
 
-Adicione os códigos `EMAIL_TAKEN` e `INVALID_CREDENTIALS` ao tipo `ApiErrorCode` em
-`packages/core/src/contracts/responses.ts`, e os schemas zod de `register`/`login` em
-`packages/core/src/contracts/requests.ts`: o front reusa os dois.
+Os schemas zod `registerSchema` e `loginSchema` e o tipo `AuthSession` (`{ user, accessToken }`) já
+existem em `packages/core/src/contracts`, e o front já usa os três. Valide o corpo com eles e acrescente
+os códigos `EMAIL_TAKEN` e `INVALID_CREDENTIALS` ao tipo `ApiErrorCode`.
+
+No front (`web/src/auth`), o login e o cadastro já chamam essas rotas e guardam o `accessToken`.
+Fica com a fase 4 renovar o access token pelo `/auth/refresh` quando a API responder 401.
 
 ## Testes esperados
 

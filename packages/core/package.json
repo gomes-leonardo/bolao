@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./contracts": "./src/contracts/index.ts",
+    "./scoring": "./src/scoring/score-prediction.ts",
     "./prisma": "./src/prisma.ts",
     "./testing": "./src/test/index.ts",
     "./testing/global-setup": "./src/test/integration-db.ts"

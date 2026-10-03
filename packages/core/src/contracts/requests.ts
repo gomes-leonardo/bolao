@@ -1,5 +1,22 @@
 import { z } from "zod";
 
+export const registerSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Diz como a galera te chama.")
+    .max(40, "Nome com no máximo 40 caracteres."),
+  email: z.email("Esse e-mail tá pela metade.").trim().toLowerCase(),
+  password: z.string().min(8, "Mínimo de 8 caracteres."),
+});
+export type RegisterInput = z.infer<typeof registerSchema>;
+
+export const loginSchema = z.object({
+  email: z.email("Esse e-mail tá pela metade.").trim().toLowerCase(),
+  password: z.string().min(1, "Digita a senha."),
+});
+export type LoginInput = z.infer<typeof loginSchema>;
+
 const poolName = z
   .string()
   .trim()
