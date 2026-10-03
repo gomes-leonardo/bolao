@@ -14,8 +14,8 @@ Projeto de estudo do roadmap Full Stack do [roadmap.sh](https://roadmap.sh/full-
 
 ```
 packages/core   regra de negócio compartilhada + schema e migrations do Prisma
+cli/            importa jogos da football-data e registra resultados
 api/            NestJS (fase 3)
-cli/            comandos de importação e resultado (fase 2)
 web/            React (fase 5)
 ```
 
@@ -49,6 +49,28 @@ host, exporte `POSTGRES_HOST_PORT` antes do `db:up` **e** ajuste a porta em `DAT
 | `db:migrate:new <nome>`   | gera uma migration a partir do schema **sem aplicar**, para editar o SQL antes |
 | `db:reset`                | **apaga o banco** e reaplica todas as migrations. Só em dev                    |
 | `db:generate`             | regenera o Prisma Client                                                       |
+
+## CLI
+
+Importa a tabela do Brasileirão e registra resultados. A configuração fica em `cli/.env`:
+`DATABASE_URL` e, para usar a API, `FOOTBALL_DATA_API_KEY` (chave gratuita em
+[football-data.org](https://www.football-data.org/client/register)).
+
+```bash
+npm run cli -- import --round 28                 # rodada da temporada atual, pela API
+npm run cli -- import -r 27 -s 2026 -f cli/fixtures/bsa-2026-amostra.json   # sem API
+npm run cli -- result --match 980011 2-1         # placar final digitado à mão
+```
+
+- `import` cria ou atualiza times e jogos (é seguro rodar de novo). Jogos que chegam encerrados
+  já têm os palpites pontuados. Se o placar oficial mudar depois, os pontos são recalculados.
+- `result` encerra um jogo pelo id da football-data e recalcula os pontos. Recusa jogo que ainda
+  não começou.
+- Status da football-data: `TIMED` vira agendado; `IN_PLAY`, `PAUSED` e `SUSPENDED` viram ao vivo
+  (jogo interrompido não pontua até ter resultado final); `AWARDED` (W.O.) pontua pelo placar
+  oficial.
+- `cli/fixtures/bsa-2026-amostra.json` é uma amostra **fictícia** (rodada 27 encerrada e rodada 28
+  por jogar) para desenvolver sem chave.
 
 ## Testes
 
