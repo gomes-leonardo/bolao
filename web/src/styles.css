@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* Identidade Carimbou: lambe-lambe de rua. Papel claro colado no asfalto, tinta fluor e carimbo. */
+@theme {
+  --color-asphalt: #18181a;
+  --color-surface: #232326;
+  --color-line: #3a3a3e;
+  --color-muted: #a8a196;
+
+  --color-paper: #f1eadb;
+  --color-paper-fold: #c9c0ac;
+  --color-ink: #18181a;
+  --color-ink-muted: #5b564e;
+
+  --color-fluor-orange: #ff5a1f;
+  --color-fluor-orange-ink: #c23a0b;
+  --color-fluor-pink: #ff4a93;
+  --color-fluor-pink-ink: #c2185b;
+  --color-ink-blue: #5a8bff;
+  --color-tape: #ffe14d;
+
+  --font-display: "Anybody", "Arial Black", sans-serif;
+  --font-sans: "Familjen Grotesk", "Helvetica Neue", sans-serif;
+
+  --animate-stamp: stamp 450ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  --animate-blink: blink 1.2s ease-in-out infinite;
+  --animate-paste: paste 400ms ease-out both;
+
+  @keyframes stamp {
+    0% {
+      transform: scale(1.4) rotate(var(--stamp-tilt, -9deg));
+      opacity: 0;
+    }
+    60% {
+      transform: scale(0.95) rotate(var(--stamp-tilt, -9deg));
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1) rotate(var(--stamp-tilt, -9deg));
+      opacity: 1;
+    }
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0.3;
+    }
+  }
+  @keyframes paste {
+    from {
+      transform: translateY(8px) rotate(var(--paper-tilt, 0deg));
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) rotate(var(--paper-tilt, 0deg));
+      opacity: 1;
+    }
+  }
+}
+
+/* A Anybody é variável na largura: condensada no placar, larga nos títulos. */
+@utility stretch-condensed {
+  font-stretch: 60%;
+}
+@utility stretch-semi {
+  font-stretch: 115%;
+}
+@utility stretch-wide {
+  font-stretch: 130%;
+}
+@utility stretch-extra {
+  font-stretch: 140%;
+}
+
+@utility misprint-orange {
+  text-shadow: 3px 2px 0 var(--color-fluor-orange);
+}
+@utility misprint-pink {
+  text-shadow: 2px 1px 0 var(--color-fluor-pink);
+}
+
+@utility asphalt {
+  background-color: var(--color-asphalt);
+  background-image: radial-gradient(
+    rgb(241 234 219 / 0.05) 1px,
+    transparent 1.2px
+  );
+  background-size: 4px 4px;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply asphalt font-sans text-paper antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-fluor-orange);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
