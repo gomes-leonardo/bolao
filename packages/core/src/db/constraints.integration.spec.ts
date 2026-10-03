@@ -32,6 +32,9 @@ afterAll(() => client.end());
 
 beforeEach(async () => {
   await client.query("BEGIN");
+  await client.query(
+    "TRUNCATE predictions, pool_members, pools, matches, teams, users RESTART IDENTITY CASCADE",
+  );
   await client.query(fixtures);
 });
 afterEach(() => client.query("ROLLBACK"));
