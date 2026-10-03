@@ -15,6 +15,9 @@ function requireUrl(name: string): URL {
 }
 
 const testUrl = requireUrl("TEST_DATABASE_URL");
+// Cada pacote pode usar o próprio banco, para as suítes não brigarem se rodarem em paralelo.
+const databaseOverride = process.env["TEST_DATABASE_NAME"];
+if (databaseOverride) testUrl.pathname = `/${databaseOverride}`;
 const databaseName = (url: URL) => decodeURIComponent(url.pathname.slice(1));
 const testDatabase = databaseName(testUrl);
 
