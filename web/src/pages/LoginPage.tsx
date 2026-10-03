@@ -1,5 +1,6 @@
 import { loginSchema, type LoginInput } from "@bolao/core/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, Navigate, useLocation, useNavigate } from "react-router";
@@ -29,27 +30,18 @@ function useAfterLogin() {
 function DevLogin({ onDone }: { onDone: () => void }) {
   const { signInAsDevUser } = useAuth();
   const [userId, setUserId] = useState("");
-  const [error, setError] = useState<string>();
-  const [pending, setPending] = useState(false);
-
-  const enter = async () => {
-    setPending(true);
-    setError(undefined);
-    try {
-      await signInAsDevUser(Number(userId));
-      onDone();
-    } catch (caught) {
-      setError(authErrorMessage(caught));
-    } finally {
-      setPending(false);
-    }
-  };
+  const enter = useMutation({
+    mutationFn: (id: number) => signInAsDevUser(id),
+    onSuccess: onDone,
+  });
+  const pending = enter.isPending;
+  const error = enter.error ? authErrorMessage(enter.error) : undefined;
 
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        void enter();
+        enter.mutate(Number(userId));
       }}
       className="flex flex-col gap-3 border-2 border-dashed border-line p-4"
     >
@@ -102,7 +94,7 @@ export function LoginPage() {
           <br />
           TEU
           <br />
-          <span className="text-fluor-orange">PALPITE.</span>
+          <span className="text-fluor-orange-ink">PALPITE.</span>
         </p>
         <span className="absolute -top-4 -right-5">
           <Stamp size="sm" tone="pink">

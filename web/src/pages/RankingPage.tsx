@@ -17,7 +17,7 @@ function Leader({ entry, isMe }: { entry: RankingEntry; isMe: boolean }) {
       tape="left"
       className="mx-5 flex items-center gap-3.5 p-4"
     >
-      <span className="font-display text-[76px] leading-[0.8] font-black text-fluor-orange tabular-nums [font-stretch:55%]">
+      <span className="font-display text-[76px] leading-[0.8] font-black text-fluor-orange-ink tabular-nums [font-stretch:55%]">
         {entry.position}º
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -86,21 +86,19 @@ export function RankingPage() {
     <>
       <PageHeader title="RANKING" subtitle={pool?.name} backTo="/boloes" />
       <div
-        role="tablist"
+        role="group"
         aria-label="Período"
         className="mx-5 mb-5 grid grid-cols-2 border-2 border-paper"
       >
         <button
-          role="tab"
-          aria-selected={!byRound}
+          aria-pressed={!byRound}
           className={tab(!byRound)}
           onClick={() => setParams({})}
         >
           TEMPORADA
         </button>
         <button
-          role="tab"
-          aria-selected={byRound}
+          aria-pressed={byRound}
           className={tab(byRound)}
           onClick={() => setParams({ rodada: "1" })}
         >

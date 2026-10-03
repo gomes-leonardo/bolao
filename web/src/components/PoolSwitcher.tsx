@@ -13,7 +13,7 @@ export function PoolSwitcher({ pools, value, onChange }: PoolSwitcherProps) {
       <select
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-11 max-w-48 appearance-none truncate bg-transparent pr-8 pl-3.5 text-sm font-semibold text-paper outline-none"
+        className="h-11 max-w-48 appearance-none truncate bg-transparent pr-8 pl-3.5 text-sm font-semibold text-paper"
       >
         {pools.map((pool) => (
           <option key={pool.id} value={pool.id} className="bg-surface">
