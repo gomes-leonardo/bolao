@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "cli"
+    "cli",
+    "api"
   ],
   "engines": {
     "node": ">=22.18"
@@ -21,12 +22,14 @@
     "test": "npm run test --workspaces --if-present",
     "test:integration": "npm run test:integration --workspaces --if-present",
     "cli": "npm run start -w @bolao/cli --",
+    "api": "npm run dev -w @bolao/api",
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate -w @bolao/core",
     "db:migrate:new": "npm run db:migrate:new -w @bolao/core --",
     "db:reset": "npm run db:reset -w @bolao/core",
-    "db:generate": "npm run db:generate -w @bolao/core"
+    "db:generate": "npm run db:generate -w @bolao/core",
+    "db:seed": "npm run db:seed -w @bolao/core"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

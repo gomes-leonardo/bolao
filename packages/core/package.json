@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./contracts": "./src/contracts/index.ts",
+    "./prisma": "./src/prisma.ts",
     "./testing": "./src/test/index.ts",
     "./testing/global-setup": "./src/test/integration-db.ts"
   },
@@ -16,11 +18,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "test:integration": "vitest run --config ./vitest.config.integration.ts"
+    "test:integration": "vitest run --config ./vitest.config.integration.ts",
+    "db:seed": "node scripts/seed-dev.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
-    "@prisma/client": "7.10.0"
+    "@prisma/client": "7.10.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

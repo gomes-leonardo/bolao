@@ -15,7 +15,8 @@ Projeto de estudo do roadmap Full Stack do [roadmap.sh](https://roadmap.sh/full-
 ```
 packages/core   regra de negócio compartilhada + schema e migrations do Prisma
 cli/            importa jogos da football-data e registra resultados
-api/            NestJS (fase 3)
+api/            API REST em NestJS
+docs/           contrato da autenticação (fase 4)
 web/            React (fase 5)
 ```
 
@@ -75,6 +76,43 @@ npm run cli -- result --match 980011 2-1         # placar final digitado à mão
   oficial.
 - `cli/fixtures/bsa-2026-amostra.json` é uma amostra **fictícia** (rodada 27 encerrada e rodada 28
   por jogar) para desenvolver sem chave.
+
+## API
+
+```bash
+npm run cli -- import -r 27 -s 2026 -f cli/fixtures/bsa-2026-amostra.json
+npm run cli -- import -r 28 -s 2026 -f cli/fixtures/bsa-2026-amostra.json
+npm run db:seed      # usuários, bolões e palpites de dev (idempotente)
+npm run api          # http://localhost:3333/api
+```
+
+Configuração em `api/.env`. A autenticação JWT é a fase 4 (contrato em
+[`docs/auth-contract.md`](docs/auth-contract.md)). Até lá, com `AUTH_MODE=dev`, a API aceita o header
+`X-Dev-User-Id` com um dos ids que o `db:seed` imprime:
+
+```bash
+curl localhost:3333/api/pools -H 'X-Dev-User-Id: <id>'
+```
+
+| Rota                                          | O que faz                                            |
+| --------------------------------------------- | ---------------------------------------------------- |
+| `GET /health`                                 | pública                                              |
+| `GET /me`                                     | usuário atual                                        |
+| `GET /matches?round=`                         | jogos da rodada (atual por padrão) com o meu palpite |
+| `GET /matches/:id`                            | um jogo                                              |
+| `PUT /matches/:id/prediction`                 | cria ou edita o palpite (`409` depois do apito)      |
+| `POST /pools` · `GET /pools?page&pageSize`    | cria / lista meus bolões com posição e pendências    |
+| `GET` · `PATCH` · `DELETE /pools/:id`         | ver (membro), renomear e apagar (dono)               |
+| `POST /pools/join`                            | entra pelo código de convite                         |
+| `GET /pools/:id/members` · `DELETE …/:userId` | membros; o dono remove, o membro sai, o dono não sai |
+| `GET /pools/:id/ranking?round=`               | classificação: pontos, depois cravadas               |
+| `GET /pools/:id/matches/:matchId/predictions` | o muro da galera, só depois do apito                 |
+
+- **Erros:** sempre no formato `{ "error": { "code", "message", "details"? } }`. Os códigos estão em
+  `packages/core/src/contracts/responses.ts`.
+- **Quem não é membro** recebe `404`, para não revelar que o bolão existe.
+- **A trava do palpite** é checada no mesmo comando SQL que grava, então não há janela entre checar e
+  gravar.
 
 ## Testes
 
