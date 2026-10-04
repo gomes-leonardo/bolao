@@ -1,35 +1,62 @@
-# Bolão
+# Carimbou
 
 Bolão do Brasileirão entre amigos: palpites de placar, pontuação automática e ranking por bolão.
 
 Projeto de estudo do roadmap Full Stack do [roadmap.sh](https://roadmap.sh/full-stack).
 
+## Estado atual · v0.1.0
+
+**Pronto:**
+
+- banco com regras de integridade e migrations;
+- CLI que importa a tabela da football-data e registra resultados;
+- API REST de bolões, rodada, palpites com trava no apito, ranking e muro da galera;
+- front mobile first com a identidade Carimbou.
+
+**Pendente, a ser feito pelo Leo:**
+
+- **Autenticação JWT:** a API usa um guard de desenvolvimento (`X-Dev-User-Id`) até lá. Contrato em
+  [`docs/auth-contract.md`](docs/auth-contract.md).
+- **Redis.**
+
+Fora do escopo desta versão: tempo real, CI/CD e deploy (veja [Decisões e dívidas](#decisões-e-dívidas)).
+
 ## Stack
 
-- **API:** NestJS + Prisma + PostgreSQL
+- **API:** NestJS 12 + Prisma 7 + PostgreSQL 18
 - **CLI:** Node + commander (importa jogos e registra resultados)
 - **Web:** React 19 + Vite + TypeScript + Tailwind 4 + TanStack Query + React Router
 
 ## Estrutura
 
 ```
-packages/core   regra de negócio compartilhada + schema e migrations do Prisma
+packages/core   regra de negócio compartilhada, contratos zod, schema e migrations do Prisma
 cli/            importa jogos da football-data e registra resultados
 api/            API REST em NestJS
 web/            front em React + Vite + Tailwind (identidade Carimbou)
-docs/           contrato da autenticação (fase 4)
-web/            React (fase 5)
+docs/           ADRs, dívida técnica e contrato da autenticação
 ```
 
-## Rodando localmente
+## Rodando do zero
 
-Requisitos: Node 22.18+, Docker.
+Requisitos: Node 22.18+ e Docker.
 
 ```bash
-npm run setup        # copia os .env.example de cada pacote e instala as dependências
-npm run db:up        # sobe o Postgres 18 na porta 5433
+npm run setup        # cria os .env a partir dos .env.example e instala as dependências
+npm run db:up        # Postgres 18 na porta 5433
 npm run db:migrate   # aplica as migrations e gera o Prisma Client
+
+# dados de desenvolvimento (amostra fictícia, sem precisar de chave da football-data)
+npm run cli -- import -r 27 -s 2026 -f cli/fixtures/bsa-2026-amostra.json
+npm run cli -- import -r 28 -s 2026 -f cli/fixtures/bsa-2026-amostra.json
+npm run db:seed      # imprime os ids dos usuários de dev
+
+npm run dev          # API em http://localhost:3333/api e web em http://localhost:5174
 ```
+
+Abra o web e entre pelo **modo dev** com um dos ids impressos pelo `db:seed`.
+
+Para conferir que está tudo certo: `npm run typecheck && npm run lint && npm test && npm run test:integration`.
 
 Cada pacote tem o próprio `.env` (por exemplo `packages/core/.env`). Para usar outra porta no
 host, exporte `POSTGRES_HOST_PORT` antes do `db:up` **e** ajuste a porta em `DATABASE_URL` e
