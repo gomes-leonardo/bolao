@@ -24,6 +24,12 @@ export interface ApiError {
   };
 }
 
+/** Resposta de cadastro e login (contrato da fase 4, em docs/auth-contract.md). */
+export interface AuthSession {
+  user: UserView;
+  accessToken: string;
+}
+
 export interface Paginated<T> {
   data: T[];
   meta: { page: number; pageSize: number; total: number };
