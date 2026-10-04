@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": [
+    "src",
+    "prisma.config.ts",
+    "vitest.config.ts",
+    "vitest.config.integration.ts"
+  ]
+}
