@@ -4,8 +4,9 @@ O que ficou conscientemente para depois, em ordem aproximada de quando vai doer.
 
 ## Próximas etapas do roadmap (fora do escopo de propósito)
 
-- **Autenticação JWT (fase 4, do Leo):** rotas, `refresh_tokens`, troca do `DevAuthGuard` e renovação do
-  token no front. Contrato em [`auth-contract.md`](auth-contract.md).
+- **Autenticação JWT (fase 4, do Leo):** cadastro e login por e-mail e senha e a validação do access
+  token já funcionam. Faltam `refresh_tokens`, a renovação do token no front e aposentar o
+  `X-Dev-User-Id`. Contrato em [`auth-contract.md`](auth-contract.md).
 - **Redis:** o ranking é recalculado no Postgres a cada leitura; o ponto de troca é o `RankingService`.
 - **Tempo real:** polling de 30 s ([ADR 0006](adr/0006-polling-em-vez-de-tempo-real.md)).
 - **Agendamento do CLI:** o `import` roda à mão; um cron entra junto com servidores e deploy.
@@ -28,8 +29,8 @@ O que ficou conscientemente para depois, em ordem aproximada de quando vai doer.
 - **Status `SUSPENDED`:** fica "ao vivo" indefinidamente se a football-data nunca mandar o resultado.
 - **Recálculo no import:** todo import reescreve os pontos dos jogos encerrados da rodada. É barato na
   escala atual.
-- **Dados de dev:** o `db:seed` cria usuários sem senha (`dev-sem-senha`), e a fase 4 define como criar
-  usuários reais.
+- **Dados de dev:** o `db:seed` cria todos os usuários com a senha única `carimbou123`, então dá para
+  entrar pela tela de e-mail e senha.
 
 ## O que eu aprendi
 

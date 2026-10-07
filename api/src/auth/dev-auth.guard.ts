@@ -15,9 +15,9 @@ import { IS_PUBLIC } from "./public.decorator.js";
 export const DEV_USER_HEADER = "x-dev-user-id";
 
 /**
- * Guard provisório, só para desenvolvimento: confia no header X-Dev-User-Id.
- * A fase 4 troca este guard por um que valida o access token JWT e preenche
- * `request.user` do mesmo jeito. Controllers e services não mudam.
+ * Caminho de desenvolvimento: confia no header X-Dev-User-Id, só com
+ * `AUTH_MODE=dev`. O JwtAuthGuard (APP_GUARD) delega para cá quando a requisição
+ * não traz `Authorization`, então o header continua funcionando só em dev.
  */
 @Injectable()
 export class DevAuthGuard implements CanActivate {
@@ -35,7 +35,7 @@ export class DevAuthGuard implements CanActivate {
 
     if (process.env["AUTH_MODE"] !== "dev") {
       throw unauthenticated(
-        "Autenticação ainda não implementada. Em desenvolvimento, use AUTH_MODE=dev.",
+        "Faz login pra continuar. Em desenvolvimento (AUTH_MODE=dev), dá pra entrar com o header X-Dev-User-Id.",
       );
     }
 
