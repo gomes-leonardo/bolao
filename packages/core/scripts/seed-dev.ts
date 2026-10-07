@@ -1,4 +1,5 @@
 import { config } from "dotenv";
+import { DEFAULT_BCRYPT_ROUNDS, hashPassword } from "../src/auth/password.ts";
 import { createDb } from "../src/db.ts";
 import { registerResult } from "../src/matches/register-result.ts";
 
@@ -11,7 +12,9 @@ if (!url)
 const db = createDb(url);
 const SEASON = 2026;
 
-// Sem senha de verdade: a autenticação (fase 4) define como criar usuários com bcrypt.
+// Senha única de dev: todos os usuários do seed entram com ela.
+const DEV_PASSWORD = "carimbou123";
+
 const people = ["Leo", "Bia", "Duda", "Caio", "Rafa", "Lu"];
 
 // Palpite de cada pessoa por posição do jogo na rodada (mandante, visitante).
@@ -110,14 +113,15 @@ async function main() {
     );
   }
 
+  const passwordHash = await hashPassword(DEV_PASSWORD, DEFAULT_BCRYPT_ROUNDS);
   const users = [];
   for (const name of people) {
     const email = `${name.toLowerCase()}@carimbou.dev`;
     users.push(
       await db.user.upsert({
         where: { email },
-        create: { name, email, passwordHash: "dev-sem-senha" },
-        update: {},
+        create: { name, email, passwordHash },
+        update: { passwordHash },
         select: { id: true, name: true },
       }),
     );
@@ -202,8 +206,9 @@ async function main() {
   }
 
   console.log(
-    "Dados de dev prontos. Use o header X-Dev-User-Id com um destes ids:",
+    `Dados de dev prontos. Entre com qualquer e-mail @carimbou.dev e a senha ${DEV_PASSWORD},`,
   );
+  console.log("ou use o header X-Dev-User-Id com um destes ids:");
   for (const user of users) console.log(`  ${user.id}  ${user.name}`);
 }
 

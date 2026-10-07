@@ -40,3 +40,10 @@ export const notFound = (code: ApiErrorCode, message: string) =>
 
 export const conflict = (code: ApiErrorCode, message: string) =>
   new AppError(409, code, message);
+
+export const emailTaken = () =>
+  conflict("EMAIL_TAKEN", "Esse e-mail já tem conta.");
+
+/** Mesma frase nos dois ramos do login: e-mail inexistente e senha errada. */
+export const invalidCredentials = () =>
+  new AppError(401, "INVALID_CREDENTIALS", "E-mail ou senha errados.");

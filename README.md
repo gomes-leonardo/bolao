@@ -15,8 +15,9 @@ Projeto de estudo do roadmap Full Stack do [roadmap.sh](https://roadmap.sh/full-
 
 **Pendente, a ser feito pelo Leo:**
 
-- **Autenticação JWT:** a API usa um guard de desenvolvimento (`X-Dev-User-Id`) até lá. Contrato em
-  [`docs/auth-contract.md`](docs/auth-contract.md).
+- **Autenticação JWT:** cadastro e login por e-mail e senha já funcionam, com access token de 15 min
+  (HS256). Falta a renovação por refresh token e o logout, além de aposentar o atalho de
+  desenvolvimento. Contrato em [`docs/auth-contract.md`](docs/auth-contract.md).
 - **Redis.**
 
 Fora do escopo desta versão: tempo real, CI/CD e deploy (veja [Decisões e dívidas](#decisões-e-dívidas)).
@@ -54,7 +55,8 @@ npm run db:seed      # imprime os ids dos usuários de dev
 npm run dev          # API em http://localhost:3333/api e web em http://localhost:5174
 ```
 
-Abra o web e entre pelo **modo dev** com um dos ids impressos pelo `db:seed`.
+Abra o web e entre com o e-mail de um usuário do `db:seed` (`leo@carimbou.dev`) e a senha
+`carimbou123`.
 
 Para conferir que está tudo certo: `npm run typecheck && npm run lint && npm test && npm run test:integration`.
 
@@ -114,9 +116,17 @@ npm run db:seed      # usuários, bolões e palpites de dev (idempotente)
 npm run api          # http://localhost:3333/api
 ```
 
-Configuração em `api/.env`. A autenticação JWT é a fase 4 (contrato em
-[`docs/auth-contract.md`](docs/auth-contract.md)). Até lá, com `AUTH_MODE=dev`, a API aceita o header
-`X-Dev-User-Id` com um dos ids que o `db:seed` imprime:
+Configuração em `api/.env` (o `JWT_ACCESS_SECRET` é obrigatório: sem ele a API não sobe). O cadastro
+e o login são públicos e devolvem `{ user, accessToken }`; mande o token nas rotas protegidas:
+
+```bash
+TOKEN=$(curl -s localhost:3333/api/auth/login -H 'content-type: application/json' \
+  -d '{"email":"leo@carimbou.dev","password":"carimbou123"}' | jq -r .accessToken)
+curl localhost:3333/api/pools -H "Authorization: Bearer $TOKEN"
+```
+
+Com `AUTH_MODE=dev`, o header `X-Dev-User-Id` continua valendo como atalho de desenvolvimento (com um
+dos ids que o `db:seed` imprime). Fora de `AUTH_MODE=dev` ele não autentica ninguém:
 
 ```bash
 curl localhost:3333/api/pools -H 'X-Dev-User-Id: <id>'
@@ -125,6 +135,7 @@ curl localhost:3333/api/pools -H 'X-Dev-User-Id: <id>'
 | Rota                                          | O que faz                                            |
 | --------------------------------------------- | ---------------------------------------------------- |
 | `GET /health`                                 | pública                                              |
+| `POST /auth/register` · `POST /auth/login`    | públicas; criam a conta / entram e devolvem o token  |
 | `GET /me`                                     | usuário atual                                        |
 | `GET /matches?round=`                         | jogos da rodada (atual por padrão) com o meu palpite |
 | `GET /matches/:id`                            | um jogo                                              |
@@ -148,9 +159,9 @@ curl localhost:3333/api/pools -H 'X-Dev-User-Id: <id>'
 npm run dev          # API (3333) e web (http://localhost:5174) juntos
 ```
 
-Configuração em `web/.env`. Com `VITE_AUTH_MODE=dev`, a tela de login mostra o **modo dev**: entra com
-o id de um usuário do `db:seed`. O login com e-mail e senha já chama `/auth/login` e
-`/auth/register` (contrato da fase 4) e avisa enquanto essas rotas não existem.
+Configuração em `web/.env`. Com `VITE_AUTH_MODE=dev`, a tela de login também mostra o **modo dev**
+(entra com o id de um usuário do `db:seed`) como atalho. O login e o cadastro por e-mail e senha
+chamam `/auth/login` e `/auth/register` e guardam o `accessToken`.
 
 - **Identidade:** tokens de cor, fonte e animação no `@theme` de `web/src/styles.css` (Tailwind 4).
   Design no [Claude Design](https://claude.ai/artifact/KVYbVSHby5PLrw9t1PWU7t).

@@ -15,6 +15,7 @@ export interface TestResponse<T> {
 
 export interface RequestOptions {
   as?: number;
+  token?: string;
   body?: unknown;
 }
 
@@ -30,9 +31,13 @@ export interface TestApp {
   close(): Promise<void>;
 }
 
+export const TEST_JWT_SECRET = "test-secret-com-32-caracteres-aqui";
+
 /** Sobe o AppModule de verdade numa porta livre, ligado ao banco de teste. */
 export async function createTestApp(): Promise<TestApp> {
   process.env["AUTH_MODE"] = "dev";
+  process.env["JWT_ACCESS_SECRET"] ??= TEST_JWT_SECRET;
+  process.env["BCRYPT_ROUNDS"] = "4";
   const db = createDb(inject("testDatabaseUrl"));
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(DB)
@@ -49,10 +54,11 @@ export async function createTestApp(): Promise<TestApp> {
     async request<T>(
       method: string,
       path: string,
-      { as, body }: RequestOptions = {},
+      { as, token, body }: RequestOptions = {},
     ) {
       const headers: Record<string, string> = {};
       if (as !== undefined) headers[DEV_USER_HEADER] = String(as);
+      if (token !== undefined) headers["authorization"] = `Bearer ${token}`;
       if (body !== undefined) headers["content-type"] = "application/json";
       const response = await fetch(`${baseUrl}${path}`, {
         method,
