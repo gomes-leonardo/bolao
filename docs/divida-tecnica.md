@@ -13,6 +13,32 @@ O que ficou conscientemente para depois, em ordem aproximada de quando vai doer.
 - **CI/CD e deploy:** nenhum pipeline ainda. Ao fazer o deploy, o `packages/core` precisa de build
   ([ADR 0001](adr/0001-monorepo-com-core-compartilhado.md)).
 
+## Camadas (Épico 0, piloto entregue)
+
+A [ADR 0008](adr/0008-camadas-e-direcao-das-dependencias.md) nomeou as camadas e o fluxo do
+palpite foi migrado como piloto. O que ficou:
+
+- **Cinco services ainda falam Prisma direto:** `pools`, `ranking`, `membership`, `matches` e
+  `auth`. O `pools.service.ts` é o maior (235 linhas) e concentra autorização, retry de código
+  de convite, paginação e composição de resumo.
+- **`me.controller.ts` ainda recebe o Prisma Client** no construtor. Sai junto com o service
+  dele. (`health.controller.ts` fica, de propósito — está escrito na ADR 0008 por quê.)
+- **`isLocked` em `api/src/matches/match-view.ts` é uma terceira cópia da regra da janela**, em
+  TypeScript e com o relógio da aplicação, usada só para exibir `MatchView.locked`. Inofensiva
+  enquanto for só exibição; se um dia autorizar alguma coisa, passa a ser bug. Mover para o
+  domínio só faz sentido junto com o resto do fluxo de jogos.
+- **`registerResult` continua recebendo `Db` direto.** O épico que tira o cálculo de pontos da
+  transação é o dono natural dessa migração.
+- **Os specs unitários cobrem o fluxo do palpite, não os outros.** Ranking (ordenação e empate),
+  composição do resumo do bolão e colisão de código de convite seguem provados só por teste de
+  integração.
+- **O `PredictionsService` recebe a porta crua, não os casos de uso.** Então `windowOf` é
+  chamável de dentro da borda, e a ordem "a gravação é a autoridade" só está pinada _dentro_ de
+  `placePrediction`. Um código futuro que pré-valide com `windowOf` antes de gravar não quebra
+  nenhum teste — e seria exatamente o desenho que a [ADR 0004](adr/0004-trava-do-palpite-no-sql.md)
+  proíbe. Na próxima task, injetar os dois casos de uso já ligados ao gateway tira `windowOf` do
+  alcance da borda sem custo de arquivo novo.
+
 ## Front
 
 - **Bundle de 504 kB** (155 kB gzip): dividir por rota com `React.lazy` e avaliar o peso do zod no cliente.

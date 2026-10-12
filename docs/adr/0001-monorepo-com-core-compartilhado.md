@@ -1,6 +1,7 @@
 # 0001 · Monorepo com um `core` compartilhado em TypeScript-fonte
 
-**Status:** aceita · 2026-10-02
+**Status:** aceita · 2026-10-02 · estendida pela [ADR 0008](0008-camadas-e-direcao-das-dependencias.md),
+que nomeia as camadas dentro do `core` e fixa a direção das dependências entre elas
 
 ## Contexto
 

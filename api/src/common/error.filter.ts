@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import type { ApiError } from "@bolao/core/contracts";
 import type { Response } from "express";
+import { toAppError } from "./domain-errors.js";
 import { AppError } from "./errors.js";
 
 export interface ErrorResponse {
@@ -43,13 +44,17 @@ function clientStatusOf(exception: unknown): number | undefined {
 }
 
 export function toErrorResponse(exception: unknown): ErrorResponse {
-  if (exception instanceof AppError) {
+  // Erro de domínio entra por aqui e é tratado como qualquer AppError. Este é o
+  // único ponto de tradução do domínio para a resposta (ADR 0008).
+  const appError =
+    exception instanceof AppError ? exception : toAppError(exception);
+  if (appError) {
     const error: ApiError["error"] = {
-      code: exception.code,
-      message: exception.message,
+      code: appError.code,
+      message: appError.message,
     };
-    if (exception.details) error.details = exception.details;
-    return { status: exception.status, body: { error } };
+    if (appError.details) error.details = appError.details;
+    return { status: appError.status, body: { error } };
   }
   const status = clientStatusOf(exception);
   if (status !== undefined) {

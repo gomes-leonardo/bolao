@@ -1,3 +1,4 @@
+export { createPrismaPredictionsGateway } from "./adapters/prisma/prisma-predictions-gateway.ts";
 export { createDb, type Db } from "./db.ts";
 export { matchStatuses, type MatchStatus } from "./matches/match-status.ts";
 export {
