@@ -1,6 +1,7 @@
 export { createPrismaMatchesGateway } from "./adapters/prisma/prisma-matches-gateway.ts";
 export { createPrismaMembershipGateway } from "./adapters/prisma/prisma-membership-gateway.ts";
 export { createPrismaPredictionsGateway } from "./adapters/prisma/prisma-predictions-gateway.ts";
+export { createPrismaPoolsGateway } from "./adapters/prisma/prisma-pools-gateway.ts";
 export { createPrismaRankingGateway } from "./adapters/prisma/prisma-ranking-gateway.ts";
 export { createPrismaUsersGateway } from "./adapters/prisma/prisma-users-gateway.ts";
 export { violatedUniqueConstraint } from "./adapters/prisma/unique-constraint.ts";

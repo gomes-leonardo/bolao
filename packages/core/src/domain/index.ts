@@ -58,3 +58,21 @@ export {
   type UserIdentity,
   type UsersGateway,
 } from "./users/users-gateway.ts";
+export { MAX_INVITE_CODE_ATTEMPTS, createPool } from "./pools/create-pool.ts";
+export { joinPool } from "./pools/join-pool.ts";
+export {
+  AlreadyMemberError,
+  CannotRemoveOtherMemberError,
+  InviteCodeExhaustedError,
+  InviteCodeNotFoundError,
+  OwnerCannotLeaveError,
+  PoolMemberNotFoundError,
+} from "./pools/pool-errors.ts";
+export { summarizePool, type PoolOverview } from "./pools/pool-summary.ts";
+export {
+  type CreatePoolCommand,
+  type MemberRecord,
+  type PoolRecord,
+  type PoolsGateway,
+} from "./pools/pools-gateway.ts";
+export { removePoolMember } from "./pools/remove-member.ts";
