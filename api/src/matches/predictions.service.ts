@@ -11,7 +11,10 @@ import {
   type PredictionsGateway,
 } from "@bolao/core/domain";
 import { DB } from "../db/db.module.js";
-import { MembershipService } from "../membership/membership.service.js";
+import {
+  MEMBERSHIP,
+  type Membership,
+} from "../membership/membership.provider.js";
 import { predictionSelect, toPredictionView } from "./match-view.js";
 import { MatchesService } from "./matches.service.js";
 import { PREDICTION_GATEWAY } from "./prediction-gateway.provider.js";
@@ -23,7 +26,7 @@ export class PredictionsService {
     @Inject(PREDICTION_GATEWAY)
     private readonly predictions: PredictionsGateway,
     private readonly matches: MatchesService,
-    private readonly membership: MembershipService,
+    @Inject(MEMBERSHIP) private readonly membership: Membership,
   ) {}
 
   /**

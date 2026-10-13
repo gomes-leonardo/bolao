@@ -8,6 +8,15 @@
  */
 export { MatchNotFoundError } from "./matches/match-errors.ts";
 export {
+  NotPoolOwnerError,
+  PoolNotVisibleError,
+} from "./membership/membership-errors.ts";
+export {
+  type MembershipGateway,
+  type PoolAccess,
+} from "./membership/membership-gateway.ts";
+export { requireMember, requireOwner } from "./membership/require-member.ts";
+export {
   PredictionLockedError,
   PredictionsHiddenError,
 } from "./predictions/prediction-errors.ts";

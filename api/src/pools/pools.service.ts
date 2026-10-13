@@ -13,7 +13,10 @@ import { violatedUniqueConstraint } from "@bolao/core";
 import { currentSeason } from "../common/season.js";
 import { DB } from "../db/db.module.js";
 import { MatchesService } from "../matches/matches.service.js";
-import { MembershipService } from "../membership/membership.service.js";
+import {
+  MEMBERSHIP,
+  type Membership,
+} from "../membership/membership.provider.js";
 import { RankingService } from "../ranking/ranking.service.js";
 import { generateInviteCode } from "./invite-code.js";
 
@@ -23,7 +26,7 @@ const MAX_INVITE_CODE_ATTEMPTS = 5;
 export class PoolsService {
   constructor(
     @Inject(DB) private readonly db: Db,
-    private readonly membership: MembershipService,
+    @Inject(MEMBERSHIP) private readonly membership: Membership,
     private readonly ranking: RankingService,
     private readonly matches: MatchesService,
   ) {}

@@ -1,3 +1,4 @@
+export { createPrismaMembershipGateway } from "./adapters/prisma/prisma-membership-gateway.ts";
 export { createPrismaPredictionsGateway } from "./adapters/prisma/prisma-predictions-gateway.ts";
 export { violatedUniqueConstraint } from "./adapters/prisma/unique-constraint.ts";
 export { createDb, type Db } from "./db.ts";
