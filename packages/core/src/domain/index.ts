@@ -32,6 +32,12 @@ export {
 } from "./predictions/predictions-gateway.ts";
 export { placePrediction } from "./predictions/place-prediction.ts";
 export { requirePredictionsVisible } from "./predictions/reveal-predictions.ts";
+export { rankStandings, type Standing } from "./ranking/rank-standings.ts";
+export {
+  type MemberTally,
+  type PoolTally,
+  type RankingGateway,
+} from "./ranking/ranking-gateway.ts";
 export {
   type CreateUserCommand,
   type UserCredentials,

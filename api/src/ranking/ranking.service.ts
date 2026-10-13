@@ -1,24 +1,25 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Db } from "@bolao/core";
 import type { RankingEntry } from "@bolao/core/contracts";
-import { DB } from "../db/db.module.js";
-
-interface StandingRow {
-  pool_id: number;
-  user_id: number;
-  name: string;
-  points: number;
-  exact_hits: number;
-  position: number;
-}
+import { rankStandings, type RankingGateway } from "@bolao/core/domain";
+import { RANKING_GATEWAY } from "./ranking.provider.js";
 
 /**
- * Classificação dos bolões, calculada no Postgres a cada chamada.
- * É o ponto isolado para trocar por um ranking em cache (Redis) depois.
+ * A classificação dos bolões.
+ *
+ * Daqui não sai regra: a porta agrega e `rankStandings` ordena e atribui
+ * posição. O que sobra é agrupar por bolão e garantir que um bolão sem nenhuma
+ * talha apareça com tabela vazia em vez de faltar do mapa.
+ *
+ * O retorno é anotado com `RankingEntry`, o tipo de fio, e recebe `Standing`,
+ * o tipo de domínio, direto. Os dois são estruturalmente idênticos de
+ * propósito: se o contrato mudar, o typecheck quebra aqui, que é a borda, e não
+ * dentro da regra.
  */
 @Injectable()
 export class RankingService {
-  constructor(@Inject(DB) private readonly db: Db) {}
+  constructor(
+    @Inject(RANKING_GATEWAY) private readonly ranking: RankingGateway,
+  ) {}
 
   async standings(
     poolIds: number[],
@@ -29,35 +30,12 @@ export class RankingService {
     );
     if (poolIds.length === 0) return byPool;
 
-    const rows = await this.db.$queryRaw<StandingRow[]>`
-      SELECT pm.pool_id,
-             u.id AS user_id,
-             u.name,
-             COALESCE(SUM(pr.points), 0)::int AS points,
-             (COUNT(pr.id) FILTER (WHERE pr.points = 3))::int AS exact_hits,
-             (RANK() OVER (
-               PARTITION BY pm.pool_id
-               ORDER BY COALESCE(SUM(pr.points), 0) DESC,
-                        COUNT(pr.id) FILTER (WHERE pr.points = 3) DESC
-             ))::int AS position
-        FROM pool_members pm
-        JOIN pools p ON p.id = pm.pool_id
-        JOIN users u ON u.id = pm.user_id
-        LEFT JOIN (predictions pr JOIN matches m ON m.id = pr.match_id)
-               ON pr.user_id = pm.user_id
-              AND m.season = p.season
-              AND (${round ?? null}::int IS NULL OR m.round = ${round ?? null}::int)
-       WHERE pm.pool_id = ANY(${poolIds}::int[])
-       GROUP BY pm.pool_id, u.id, u.name
-       ORDER BY pm.pool_id, position, u.name`;
-
-    for (const row of rows) {
-      byPool.get(row.pool_id)?.push({
-        position: row.position,
-        user: { id: row.user_id, name: row.name },
-        points: row.points,
-        exactHits: row.exact_hits,
-      });
+    const tallies = await this.ranking.talliesOf(poolIds, round);
+    for (const [poolId, group] of Map.groupBy(
+      tallies,
+      (tally) => tally.poolId,
+    )) {
+      byPool.set(poolId, rankStandings(group));
     }
     return byPool;
   }
