@@ -166,10 +166,28 @@ rodada ou de cair para SQL. E tem que guardar `exactHits` também, porque o dese
 dele.
 
 **Nota de comportamento:** o desempate por nome saiu da collation do Postgres e passou para
-`localeCompare(nome, "pt-BR")`. Nomes ASCII ordenam igual; acentuados podem ordenar diferente, e
-só **dentro** de uma posição já empatada — o nome nunca decidiu a posição de ninguém, nem antes
-nem agora. A ordem em pt-BR é a correta para o produto, e nenhum teste exercitava empate com
-acento.
+`localeCompare(nome, "pt-BR")`, e a diferença é maior do que parece. O banco ordena por **byte** —
+`datlocprovider = c`, conferido no container, apesar de o `datcollate` dizer `en_US.utf8` —, onde
+toda maiúscula vem antes de toda minúscula e o acento vai para o fim:
+
+```
+Postgres:  Alves, Ana, Bruno, Joao, João, Zeca, ada, ana, Ávila
+pt-BR:     ada, Alves, ana, Ana, Ávila, Bruno, Joao, João, Zeca
+```
+
+O que muda é **caixa antes de acento**, não só acento. `["Bruno", "ana"]` inverte, e é ASCII puro:
+num produto em que a pessoa digita o próprio nome como quiser, nome em minúscula é mais comum que
+nome acentuado. A ordem em pt-BR é a correta para o produto, e a mudança afeta só a exibição
+**dentro** de uma posição já empatada — o nome nunca decidiu a posição de ninguém, nem antes nem
+agora.
+
+Dois casos em `rank-standings.spec.ts` prendem a escolha, um de caixa e um de acento, e os dois
+ficam vermelhos sob uma comparação de byte. Sem eles a decisão seria comentário: todos os outros
+nomes dos testes são ASCII capitalizado com inicial distinta, e ordenam igual nos dois esquemas.
+
+O que **não** acompanhou: `wallEntriesOf` ordena os membros do muro com `ORDER BY` do Postgres, na
+collation de byte. O produto tem duas ordens de nome, então a frase "pt-BR é a ordem correta" vale
+hoje pela metade. Está registrado na dívida técnica.
 
 ### O `isLocked` resolveu-se pelo caminho oposto ao previsto
 
@@ -192,10 +210,19 @@ problema. Flag ausente vira trancado: falhar fechado.
 
 O `regex` passou a incluir `(^|/)contracts(/|$)`. O nome `@bolao/core/contracts` já caía no
 `group`, mas `../../contracts/responses.ts` por caminho relativo passava. Sem essa linha, "o
-domínio define os próprios tipos, não os de fio" seria combinado e não garantia — e três tipos
-novos do domínio (`Standing`, `PoolOverview`, `MatchRow`) existem exatamente por essa razão. Eles
-são estruturalmente idênticos aos de `contracts`, então a borda devolve direto e o typecheck
-quebra **lá** se o contrato mudar, que é onde a decisão de contrato pertence.
+domínio define os próprios tipos, não os de fio" seria combinado e não garantia.
+
+Os tipos novos do domínio existem por **duas** razões diferentes, e confundi-las apaga o
+aprendizado:
+
+- **Duplicata deliberada**, campo a campo igual ao tipo de fio: `Standing` ≡ `RankingEntry`,
+  `PoolOverview` ≡ `PoolSummary`, `WallRow` ≡ `WallEntry`. A borda devolve direto, sem conversão
+  nenhuma, e o typecheck quebra **lá** se o contrato mudar — que é onde a decisão de contrato
+  pertence. A duplicata custa nada e compra a independência.
+- **Representação de domínio que genuinamente difere do fio**: `MatchRow` tem `kickoffAt: Date`
+  contra `string`, e `homeScore`/`awayScore` separados contra `score: { home, away } | null`.
+  Aqui `toMatchView` faz conversão de verdade, e o tipo separado não é cerimônia: `Date` é o que o
+  banco devolve, ISO-8601 é o que o JSON pede, e quem decide isso é a borda.
 
 ### Onde a camada continuou não entrando
 

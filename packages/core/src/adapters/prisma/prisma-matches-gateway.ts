@@ -1,4 +1,5 @@
 import type { Db } from "../../db.ts";
+import type { MatchStatus } from "../../matches/match-status.ts";
 import type {
   MatchRow,
   MatchesGateway,
@@ -85,7 +86,9 @@ export function createPrismaMatchesGateway(db: Db): MatchesGateway {
     season: match.season,
     round: match.round,
     kickoffAt: match.kickoffAt,
-    status: match.status,
+    // Saber que a coluna só guarda status válido é conhecimento do banco, e
+    // o cast mora aqui, não na borda.
+    status: match.status as MatchStatus,
     locked,
     homeScore: match.homeScore,
     awayScore: match.awayScore,

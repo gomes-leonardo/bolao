@@ -67,6 +67,37 @@ describe("rankStandings", () => {
     expect(result.map((s) => s.user.name)).toEqual(["Ana", "Beto", "Caio"]);
   });
 
+  it("ordena por pt-BR, não por byte: caixa não joga ninguém para o fim", () => {
+    // Este caso existe para prender a escolha do comparador, e é ASCII puro.
+    // A collation do banco é de byte (datlocprovider = c), onde "ana" vem
+    // DEPOIS de "Bruno" porque minúscula tem código maior. Em pt-BR a caixa é
+    // diferença terciária, então "ana" vem antes. Trocar o localeCompare por
+    // `a < b` inverte esta linha.
+    const result = rankStandings([tally("Bruno", 5, 1), tally("ana", 5, 1)]);
+
+    expect(result.map((s) => s.user.name)).toEqual(["ana", "Bruno"]);
+  });
+
+  it("ordena por pt-BR, não por byte: acento não joga ninguém para o fim", () => {
+    // Mesma razão, com acento: em byte "Ávila" vem depois de "Zeca", porque Á
+    // é multibyte. Em pt-BR vem antes de "Bruno".
+    const result = rankStandings([tally("Bruno", 5, 1), tally("Ávila", 5, 1)]);
+
+    expect(result.map((s) => s.user.name)).toEqual(["Ávila", "Bruno"]);
+  });
+
+  it("empate triplo e a próxima distinta pula para a quarta", () => {
+    // Encadeia a leitura da posição anterior por mais de um passo.
+    const result = rankStandings([
+      tally("Ana", 5, 1),
+      tally("Beto", 5, 1),
+      tally("Caio", 5, 1),
+      tally("Duda", 1, 0),
+    ]);
+
+    expect(result.map((s) => s.position)).toEqual([1, 1, 1, 4]);
+  });
+
   it("o nome nunca muda a posição de ninguém", () => {
     // O caso que mata a tradução errada: se o nome entrasse no cálculo da
     // posição junto com pontos e cravadas, estes três viriam 1, 2, 3 — cada um

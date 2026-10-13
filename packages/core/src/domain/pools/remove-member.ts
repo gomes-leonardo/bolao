@@ -33,6 +33,6 @@ export async function removePoolMember(
     throw new CannotRemoveOtherMemberError(poolId, actorId);
   }
 
-  const removed = await gateways.pools.removeMember(poolId, memberId);
+  const removed = await gateways.pools.deleteMembership(poolId, memberId);
   if (!removed) throw new PoolMemberNotFoundError(poolId, memberId);
 }

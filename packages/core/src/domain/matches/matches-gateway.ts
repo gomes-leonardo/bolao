@@ -1,3 +1,5 @@
+import type { MatchStatus } from "../../matches/match-status.ts";
+
 /**
  * O time como a leitura de jogo precisa dele.
  *
@@ -33,7 +35,7 @@ export interface MatchRow {
   season: number;
   round: number;
   kickoffAt: Date;
-  status: string;
+  status: MatchStatus;
   locked: boolean;
   homeScore: number | null;
   awayScore: number | null;
@@ -42,7 +44,15 @@ export interface MatchRow {
   myPrediction: PredictionRecord | null;
 }
 
-/** Uma linha do muro da galera: o membro e o palpite dele, se houver. */
+/**
+ * Uma linha do muro da galera: o membro e o palpite dele, se houver.
+ *
+ * O muro lê `pool_members`, então esta operação é uma leitura de bolão morando
+ * na porta de jogos. A razão decisiva é topológica, não estética: `PoolsModule`
+ * importa `MatchesModule`, então pôr isto em `PoolsGateway` e injetar a porta de
+ * bolões no `PredictionsService` fecharia um ciclo de módulos e exigiria
+ * `forwardRef`. O custo aceito é o adapter de jogos conhecer `pool_members`.
+ */
 export interface WallRow {
   user: { id: number; name: string };
   prediction: PredictionRecord | null;

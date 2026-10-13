@@ -56,7 +56,7 @@ export function fakePoolsGateway(setup: FakePoolsSetup = {}): FakePoolsGateway {
       addCalls.push({ poolId, userId });
       return Promise.resolve(setup.joined ?? true);
     },
-    removeMember(poolId, userId) {
+    deleteMembership(poolId, userId) {
       removeCalls.push({ poolId, userId });
       return Promise.resolve(setup.removed ?? true);
     },

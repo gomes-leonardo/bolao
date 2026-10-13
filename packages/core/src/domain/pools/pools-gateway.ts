@@ -46,7 +46,7 @@ export interface PoolsGateway {
   addMember(poolId: number, userId: number): Promise<boolean>;
 
   /** Sai ou remove. `false` quando a pessoa não estava no bolão. */
-  removeMember(poolId: number, userId: number): Promise<boolean>;
+  deleteMembership(poolId: number, userId: number): Promise<boolean>;
 
   rename(poolId: number, name: string): Promise<void>;
 

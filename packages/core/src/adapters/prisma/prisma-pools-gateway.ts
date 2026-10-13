@@ -49,7 +49,7 @@ export function createPrismaPoolsGateway(db: Db): PoolsGateway {
       return count > 0;
     },
 
-    async removeMember(poolId, userId) {
+    async deleteMembership(poolId, userId) {
       const { count } = await db.poolMember.deleteMany({
         where: { poolId, userId },
       });

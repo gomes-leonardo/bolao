@@ -45,9 +45,17 @@ O que ficou:
 - **O `isOwner` de cada membro na listagem é calculado na borda**, comparando com o `ownerId` do
   bolão. É shaping de uma linha, não decisão; se a listagem ganhar mais regra, ela acompanha o
   resto para o domínio.
-- **Lacunas na rede de integração**, achadas ao usá-la como rede: não cobrem `GET /pools/:id` no
-  caminho feliz, `PATCH` com o nome igual ao atual, nem a paginação de `/pools/:id/members` além
-  da primeira página. A refatoração não passou por esses caminhos, mas a próxima pode.
+- **Três caminhos reescritos sem verificação ponta a ponta.** `PoolsService.get`, o `rename` e o
+  `listMembers` foram todos reescritos no Épico 0, e a rede de integração não cobre `GET
+/pools/:id` no caminho feliz nem a paginação de `/pools/:id/members` além da primeira página.
+  (O `PATCH` **está** coberto no caminho feliz; o que falta é o nome igual ao atual, que não tem
+  constraint e portanto não é risco.) Passaram porque o typecheck e os testes vizinhos pegariam
+  uma quebra grosseira, não porque alguém provou o comportamento.
+- **O muro da galera ordena nomes na collation do Postgres**, enquanto o ranking passou a ordenar
+  em `pt-BR`. São duas ordens de nome no mesmo produto: o muro põe minúscula e acento no fim, o
+  ranking não. A [ADR 0008](adr/0008-camadas-e-direcao-das-dependencias.md) justifica pt-BR como
+  a ordem correta, então essa justificativa hoje vale pela metade. Unificar é mover o `ORDER BY`
+  do `wallEntriesOf` para uma ordenação de domínio, e só vale junto com o resto do fluxo do muro.
 
 ## Front
 

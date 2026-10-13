@@ -1,4 +1,3 @@
-import type { MatchStatus } from "@bolao/core";
 import type { MatchView } from "@bolao/core/contracts";
 import type { MatchRow } from "@bolao/core/domain";
 
@@ -21,7 +20,7 @@ export function toMatchView(match: MatchRow): MatchView {
     season: match.season,
     round: match.round,
     kickoffAt: match.kickoffAt.toISOString(),
-    status: match.status as MatchStatus,
+    status: match.status,
     locked: match.locked,
     homeTeam: match.homeTeam,
     awayTeam: match.awayTeam,
