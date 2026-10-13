@@ -216,9 +216,10 @@ Os tipos novos do domínio existem por **duas** razões diferentes, e confundi-l
 aprendizado:
 
 - **Duplicata deliberada**, campo a campo igual ao tipo de fio: `Standing` ≡ `RankingEntry`,
-  `PoolOverview` ≡ `PoolSummary`, `WallRow` ≡ `WallEntry`. A borda devolve direto, sem conversão
-  nenhuma, e o typecheck quebra **lá** se o contrato mudar — que é onde a decisão de contrato
-  pertence. A duplicata custa nada e compra a independência.
+  `PoolOverview` ≡ `PoolSummary`, `WallRow` ≡ `WallEntry`, e também `TeamRecord` ≡ `TeamView` e
+  `PredictionRecord` ≡ `PredictionView`. A borda devolve direto, sem conversão nenhuma, e o
+  typecheck quebra **lá** se o contrato mudar — que é onde a decisão de contrato pertence. A
+  duplicata custa nada e compra a independência.
 - **Representação de domínio que genuinamente difere do fio**: `MatchRow` tem `kickoffAt: Date`
   contra `string`, e `homeScore`/`awayScore` separados contra `score: { home, away } | null`.
   Aqui `toMatchView` faz conversão de verdade, e o tipo separado não é cerimônia: `Date` é o que o
