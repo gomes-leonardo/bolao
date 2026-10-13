@@ -1,4 +1,4 @@
-import { Prisma } from "@bolao/core/prisma";
+import { Prisma } from "../../prisma.ts";
 
 interface DriverAdapterMeta {
   driverAdapterError?: { cause?: { constraint?: { index?: unknown } } };

@@ -2,22 +2,13 @@ import type { Db } from "../../db.ts";
 import { toPredictionWindow } from "../../domain/predictions/prediction-window.ts";
 import type { PredictionsGateway } from "../../domain/predictions/predictions-gateway.ts";
 import { Prisma } from "../../prisma.ts";
+import { openWindow } from "./prediction-window.sql.ts";
 
 interface PlacedRow {
   home_score: number;
   away_score: number;
   points: number | null;
 }
-
-/**
- * A janela do palpite mora aqui e em nenhum outro lugar (ADR 0004).
- *
- * A gravação e o muro leem a mesma condição e o mesmo relógio, o do Postgres.
- * As duas queries apelidam `matches` de `m` justamente para este fragmento
- * caber nas duas — antes o predicado estava escrito duas vezes, e manter as
- * duas em sincronia era um combinado, não uma garantia.
- */
-const openWindow = Prisma.sql`m.status = 'scheduled' AND m.kickoff_at > now()`;
 
 export function createPrismaPredictionsGateway(db: Db): PredictionsGateway {
   return {

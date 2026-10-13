@@ -62,10 +62,15 @@ export default defineConfig(
               // relativo. `adapters` está aqui porque é o vizinho mais próximo
               // e o atalho mais tentador: o adapter importa o Prisma como
               // valor, então um import desses arrastaria o client inteiro.
+              // `contracts` está aqui porque o nome `@bolao/core/contracts` já
+              // cai no `group` acima, mas `../../contracts/responses.ts`
+              // passaria. O domínio define os próprios tipos; o formato de fio
+              // é do front e da borda, e uma regra que dependesse dele mudaria
+              // junto com um campo de resposta.
               regex:
-                "(^|/)(db|prisma)\\.ts$|/generated/prisma(/|$)|(^|/)adapters(/|$)|(^|/)api/src(/|$)",
+                "(^|/)(db|prisma)\\.ts$|/generated/prisma(/|$)|(^|/)adapters(/|$)|(^|/)api/src(/|$)|(^|/)contracts(/|$)",
               message:
-                "O domínio não importa o client do core nem um adapter. A dependência aponta para dentro: quem conhece o Postgres é packages/core/src/adapters, e quem o liga ao domínio é a borda (ADR 0008).",
+                "O domínio não importa o client do core, um adapter, nem o formato de fio em contracts. A dependência aponta para dentro: quem conhece o Postgres é packages/core/src/adapters, e quem o liga ao domínio é a borda (ADR 0008).",
             },
           ],
         },
@@ -77,7 +82,7 @@ export default defineConfig(
         "error",
         {
           selector:
-            "ImportExpression > Literal[value=/^(@nestjs|@prisma|@bolao|node:)|(^|\\/)(db|prisma)\\.ts$|(^|\\/)adapters(\\/|$)|(^|\\/)api\\/src(\\/|$)|\\/generated\\/prisma/]",
+            "ImportExpression > Literal[value=/^(@nestjs|@prisma|@bolao|node:)|(^|\\/)(db|prisma)\\.ts$|(^|\\/)adapters(\\/|$)|(^|\\/)api\\/src(\\/|$)|(^|\\/)contracts(\\/|$)|\\/generated\\/prisma/]",
           message:
             "import() dinâmico não escapa a fronteira: o domínio não carrega framework, Prisma nem adapter, nem sob demanda (ADR 0008).",
         },

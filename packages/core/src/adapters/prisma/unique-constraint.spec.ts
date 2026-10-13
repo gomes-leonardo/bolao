@@ -1,6 +1,6 @@
-import { Prisma } from "@bolao/core/prisma";
+import { Prisma } from "../../prisma.ts";
 import { describe, expect, it } from "vitest";
-import { violatedUniqueConstraint } from "./prisma-errors.js";
+import { violatedUniqueConstraint } from "./unique-constraint.ts";
 
 const prismaError = (code: string, meta?: Record<string, unknown>) =>
   new Prisma.PrismaClientKnownRequestError("falhou", {

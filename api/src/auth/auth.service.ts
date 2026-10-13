@@ -8,7 +8,7 @@ import type {
   UserView,
 } from "@bolao/core/contracts";
 import { emailTaken, invalidCredentials } from "../common/errors.js";
-import { violatedUniqueConstraint } from "../common/prisma-errors.js";
+import { violatedUniqueConstraint } from "@bolao/core";
 import { DB } from "../db/db.module.js";
 import { AUTH_CONFIG, type AuthConfig } from "./auth-config.js";
 import { TokenService } from "./token.service.js";

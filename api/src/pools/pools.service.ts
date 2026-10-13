@@ -9,7 +9,7 @@ import type {
 } from "@bolao/core/contracts";
 import { conflict, forbidden, notFound } from "../common/errors.js";
 import { paginated, skipOf } from "../common/pagination.js";
-import { violatedUniqueConstraint } from "../common/prisma-errors.js";
+import { violatedUniqueConstraint } from "@bolao/core";
 import { currentSeason } from "../common/season.js";
 import { DB } from "../db/db.module.js";
 import { MatchesService } from "../matches/matches.service.js";
