@@ -143,3 +143,91 @@ Isto cobriu **um** fluxo vertical, o do palpite e do muro. Fica para as tasks do
   autorizar algo, passa a ser bug.
 - `registerResult` continua recebendo `Db` direto. O épico que tira o cálculo de pontos da
   transação é o dono natural dessa migração.
+
+## Emenda · fechamento do épico, 2026-10-13
+
+Os limites acima foram resolvidos, menos o último. O que esta emenda acrescenta são as duas
+coisas que **não** eram simples aplicação da decisão original.
+
+### A regra que estava dentro do SQL de leitura
+
+O `RankingService` somava, ordenava, desempatava e atribuía posição num `RANK() OVER` dentro de
+`$queryRaw`. É o mesmo tipo de nó que a trava do palpite, mas resolvido do lado contrário: ali a
+regra era inseparável do comando de escrita e ficou no adapter; aqui ela é separável, e a linha
+passa entre agregação e ordenação.
+
+A porta `RankingGateway` devolve **talha** — soma e cravadas por membro, sem ordem e sem posição.
+`SUM` e `COUNT` são acesso a dado; _o que ganha de quê e como empate vira posição_ é regra, e
+mora em `rankStandings`.
+
+O que a forma da porta já revela do Épico 2, antes de ele começar: `talliesOf` recebe `round?`,
+e um sorted set por `(bolão, temporada)` não filtra por rodada — vai precisar de chave por
+rodada ou de cair para SQL. E tem que guardar `exactHits` também, porque o desempate depende
+dele.
+
+**Nota de comportamento:** o desempate por nome saiu da collation do Postgres e passou para
+`localeCompare(nome, "pt-BR")`. Nomes ASCII ordenam igual; acentuados podem ordenar diferente, e
+só **dentro** de uma posição já empatada — o nome nunca decidiu a posição de ninguém, nem antes
+nem agora. A ordem em pt-BR é a correta para o produto, e nenhum teste exercitava empate com
+acento.
+
+### O `isLocked` resolveu-se pelo caminho oposto ao previsto
+
+O limite acima dizia que mover a regra da janela para o domínio implicaria reimplementar o
+predicado lá. Está certo, e é por isso que ela **não** foi movida: `locked` passou a **vir do
+adapter**, avaliado pelo mesmo fragmento `Prisma.sql` da gravação e com o relógio do Postgres.
+"Usar a regra de domínio" aqui significa ler o único predicado que existe, não reescrevê-lo.
+
+O predicado estava em quatro lugares, não três: a gravação, o `windowOf`, o `isLocked` e o
+`match.count` de palpites pendentes do `matches.service.ts` — os dois últimos em TypeScript e
+com o relógio da aplicação. Agora existe em um, e quatro operações o consomem.
+
+Custa uma query de flags por leitura de jogo, feita **depois** da leitura porque precisa dos ids.
+Fora de transação, então `locked` pode estar milissegundos velho. É aceitável porque `locked` é
+exibição e a autoridade continua sendo a gravação (ADR 0004), e porque a alternativa — reescrever
+a leitura do jogo inteira em `$queryRaw` para caber numa query só — é um risco maior do que o
+problema. Flag ausente vira trancado: falhar fechado.
+
+### A cerca ganhou uma linha
+
+O `regex` passou a incluir `(^|/)contracts(/|$)`. O nome `@bolao/core/contracts` já caía no
+`group`, mas `../../contracts/responses.ts` por caminho relativo passava. Sem essa linha, "o
+domínio define os próprios tipos, não os de fio" seria combinado e não garantia — e três tipos
+novos do domínio (`Standing`, `PoolOverview`, `MatchRow`) existem exatamente por essa razão. Eles
+são estruturalmente idênticos aos de `contracts`, então a borda devolve direto e o typecheck
+quebra **lá** se o contrato mudar, que é onde a decisão de contrato pertence.
+
+### Onde a camada continuou não entrando
+
+Além do `GET /health`, dois casos novos:
+
+- **a porta das contas é injetada crua**, sem caso de uso em cima. A regra da autenticação é
+  costura de borda ([ADR 0005](0005-costura-de-autenticacao.md)) — o hash do sentinela e a
+  equivalência dos dois ramos do login —, e trazê-la para o domínio exigiria uma porta de
+  hashing para nada. A porta existe para o `auth.service.ts` parar de conhecer o Prisma;
+- **`summarizePool` é função pura, sem porta.** Porta existe para o I/O de que uma regra
+  precisa, e esta recebe o resultado do I/O que a borda já fez. O fan-out das três leituras e a
+  deduplicação por temporada ficam na borda, porque otimização de N+1 não é decisão que se possa
+  errar.
+
+O inverso também apareceu: onde a porta é injetada, ela entra **amarrada em casos de uso**, não
+crua, sempre que um método dela devolve resultado em vez de lançar. `findVisiblePool` devolvendo
+`null` sem ninguém lançar é um bypass silencioso de autorização; `firstUnfinishedRound` sem o
+fallback muda a rodada exibida; `createWithInviteCode` sem a política perde o retry. É o mesmo
+argumento que tirou o `windowOf` do alcance da borda.
+
+### Consequências do fechamento
+
+- Com o Postgres parado, `npm test` passa com **198 testes**. Eram 155, e o domínio cobria só o
+  fluxo do palpite. Agora cobre também autorização de membro e dono, ordenação e empate da
+  classificação, composição do resumo do bolão e colisão de código de convite.
+- Os sete `*.integration.spec.ts` da API passam **sem uma asserção alterada**. Foram a rede desta
+  refatoração inteira, e o `ranking.integration.spec.ts` é o que prova, contra o banco de
+  verdade, que `rankStandings` reproduz o `RANK()`.
+- `@Inject(DB)` existe em dois lugares: `health.controller.ts`, isento pelo critério acima, e
+  `db.module.ts`, que é o provedor do token.
+- O contrato HTTP não mudou. As nove mensagens de erro que saíram dos services para
+  `domain-errors.ts` foram conferidas uma a uma contra o `origin/main` — nenhum teste pega uma
+  troca de frase, porque os de integração afirmam `error.code`.
+- O `packages/core` continua com domínio e infraestrutura no mesmo pacote, pelo mesmo motivo de
+  antes. Revisitar quando o core ganhar build.

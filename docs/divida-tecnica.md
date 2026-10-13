@@ -7,37 +7,47 @@ O que ficou conscientemente para depois, em ordem aproximada de quando vai doer.
 - **Autenticação JWT (fase 4, do Leo):** cadastro e login por e-mail e senha e a validação do access
   token já funcionam. Faltam `refresh_tokens`, a renovação do token no front e aposentar o
   `X-Dev-User-Id`. Contrato em [`auth-contract.md`](auth-contract.md).
-- **Redis:** o ranking é recalculado no Postgres a cada leitura; o ponto de troca é o `RankingService`.
+- **Redis:** o ranking é recalculado no Postgres a cada leitura. O ponto de troca é uma linha em
+  `api/src/ranking/ranking.provider.ts`: escrever um `RankingGateway` com um método, `talliesOf`.
+  A regra de ordenação e empate não é tocada, porque ela não está lá.
 - **Tempo real:** polling de 30 s ([ADR 0006](adr/0006-polling-em-vez-de-tempo-real.md)).
 - **Agendamento do CLI:** o `import` roda à mão; um cron entra junto com servidores e deploy.
 - **CI/CD e deploy:** nenhum pipeline ainda. Ao fazer o deploy, o `packages/core` precisa de build
   ([ADR 0001](adr/0001-monorepo-com-core-compartilhado.md)).
 
-## Camadas (Épico 0, piloto entregue)
+## Camadas (Épico 0 entregue)
 
-A [ADR 0008](adr/0008-camadas-e-direcao-das-dependencias.md) nomeou as camadas e o fluxo do
-palpite foi migrado como piloto. O que ficou:
+A [ADR 0008](adr/0008-camadas-e-direcao-das-dependencias.md), com a emenda de fechamento, nomeou
+as camadas e cobriu a API inteira. Com o Postgres parado, `npm test` passa com 198 testes.
+`@Inject(DB)` existe em dois lugares: `health.controller.ts`, isento por escrito na ADR, e
+`db.module.ts`, que é o provedor do token.
 
-- **Cinco services ainda falam Prisma direto:** `pools`, `ranking`, `membership`, `matches` e
-  `auth`. O `pools.service.ts` é o maior (235 linhas) e concentra autorização, retry de código
-  de convite, paginação e composição de resumo.
-- **`me.controller.ts` ainda recebe o Prisma Client** no construtor. Sai junto com o service
-  dele. (`health.controller.ts` fica, de propósito — está escrito na ADR 0008 por quê.)
-- **`isLocked` em `api/src/matches/match-view.ts` é uma terceira cópia da regra da janela**, em
-  TypeScript e com o relógio da aplicação, usada só para exibir `MatchView.locked`. Inofensiva
-  enquanto for só exibição; se um dia autorizar alguma coisa, passa a ser bug. Mover para o
-  domínio só faz sentido junto com o resto do fluxo de jogos.
-- **`registerResult` continua recebendo `Db` direto.** O épico que tira o cálculo de pontos da
-  transação é o dono natural dessa migração.
-- **Os specs unitários cobrem o fluxo do palpite, não os outros.** Ranking (ordenação e empate),
-  composição do resumo do bolão e colisão de código de convite seguem provados só por teste de
-  integração.
-- **O `PredictionsService` recebe a porta crua, não os casos de uso.** Então `windowOf` é
-  chamável de dentro da borda, e a ordem "a gravação é a autoridade" só está pinada _dentro_ de
-  `placePrediction`. Um código futuro que pré-valide com `windowOf` antes de gravar não quebra
-  nenhum teste — e seria exatamente o desenho que a [ADR 0004](adr/0004-trava-do-palpite-no-sql.md)
-  proíbe. Na próxima task, injetar os dois casos de uso já ligados ao gateway tira `windowOf` do
-  alcance da borda sem custo de arquivo novo.
+O que ficou:
+
+- **`registerResult` continua recebendo `Db` direto**, e é a última regra compartilhada que fala
+  com o Prisma. O épico que tira o cálculo de pontos da transação (#18) é o dono natural dessa
+  migração: trazê-la para cá arrastaria o CLI sem necessidade.
+- **`locked` custa uma query a mais por leitura de jogo.** Ela roda depois da leitura, porque
+  precisa dos ids, e fora de transação — então `locked` pode estar milissegundos velho. Aceitável
+  enquanto for exibição, porque a autoridade sobre gravar continua sendo o comando de escrita
+  (ADR 0004). Se um dia couber tudo numa query só, é `$queryRaw` com dois joins de time e um de
+  palpite, e o ganho é pequeno.
+- **`authenticate` não virou caso de uso.** A porta das contas é injetada crua, e a regra do
+  sentinela e da equivalência dos dois ramos do login segue na borda (ADR 0005). Está escrito na
+  ADR 0008 por quê. Se a autenticação ganhar regra de verdade — bloqueio por tentativas, por
+  exemplo, que é do Épico 2 —, vale reavaliar.
+- **A prova da cerca ainda é manual.** Escrever o import proibido e ver o lint vermelho é um
+  procedimento, não um teste. Um caso que rode o ESLint programaticamente sobre um arquivo
+  temporário resolveria, e nada hoje impede que alguém relaxe o `regex` sem ninguém notar.
+- **`packages/core` continua com domínio e infraestrutura no mesmo pacote.** A separação física
+  em `packages/domain` segue recusada pelo mesmo motivo de antes, e vale revisitar quando o core
+  ganhar build, no Épico 5 (#29).
+- **O `isOwner` de cada membro na listagem é calculado na borda**, comparando com o `ownerId` do
+  bolão. É shaping de uma linha, não decisão; se a listagem ganhar mais regra, ela acompanha o
+  resto para o domínio.
+- **Lacunas na rede de integração**, achadas ao usá-la como rede: não cobrem `GET /pools/:id` no
+  caminho feliz, `PATCH` com o nome igual ao atual, nem a paginação de `/pools/:id/members` além
+  da primeira página. A refatoração não passou por esses caminhos, mas a próxima pode.
 
 ## Front
 
