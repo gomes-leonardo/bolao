@@ -1,16 +1,10 @@
 import type { Db } from "../db.ts";
+import { MatchNotFoundError } from "../domain/matches/match-errors.ts";
 import { Prisma } from "../prisma.ts";
 import { scorePrediction, type Score } from "../scoring/score-prediction.ts";
 
-export class MatchNotFoundError extends Error {
-  readonly matchId: number;
-
-  constructor(matchId: number) {
-    super(`Jogo ${matchId} não encontrado`);
-    this.name = "MatchNotFoundError";
-    this.matchId = matchId;
-  }
-}
+/** O erro mora no domínio (ADR 0008); segue exportado aqui por compatibilidade. */
+export { MatchNotFoundError };
 
 export interface RegisterResultInput {
   matchId: number;

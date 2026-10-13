@@ -5,63 +5,48 @@ import type {
   UpsertPredictionInput,
   WallView,
 } from "@bolao/core/contracts";
-import { conflict, notFound } from "../common/errors.js";
+import {
+  placePrediction,
+  requirePredictionsVisible,
+  type PredictionsGateway,
+} from "@bolao/core/domain";
 import { DB } from "../db/db.module.js";
 import { MembershipService } from "../membership/membership.service.js";
 import { predictionSelect, toPredictionView } from "./match-view.js";
 import { MatchesService } from "./matches.service.js";
-
-interface UpsertedRow {
-  home_score: number;
-  away_score: number;
-  points: number | null;
-}
+import { PREDICTION_GATEWAY } from "./prediction-gateway.provider.js";
 
 @Injectable()
 export class PredictionsService {
   constructor(
     @Inject(DB) private readonly db: Db,
+    @Inject(PREDICTION_GATEWAY)
+    private readonly predictions: PredictionsGateway,
     private readonly matches: MatchesService,
     private readonly membership: MembershipService,
   ) {}
 
   /**
-   * A trava mora no próprio SQL: o palpite só é gravado se, no mesmo comando,
-   * o jogo ainda está agendado e o apito não soou. Checar antes e gravar depois
-   * deixaria uma janela para palpitar com o jogo já começado.
-   * O FOR SHARE conflita com o lock do registerResult, que encerra o jogo.
+   * A trava do palpite é regra de domínio e mora no caso de uso; o SQL que a
+   * torna indivisível mora no adapter (ADR 0004 e ADR 0008). Daqui só sai a
+   * forma de resposta.
    */
   async upsert(
     userId: number,
     matchId: number,
     { home, away }: UpsertPredictionInput,
   ): Promise<PredictionView> {
-    const rows = await this.db.$queryRaw<UpsertedRow[]>`
-      INSERT INTO predictions (user_id, match_id, home_score, away_score)
-      SELECT ${userId}, m.id, ${home}, ${away}
-        FROM matches m
-       WHERE m.id = ${matchId}
-         AND m.status = 'scheduled'
-         AND m.kickoff_at > now()
-         FOR SHARE
-      ON CONFLICT (user_id, match_id) DO UPDATE
-         SET home_score = EXCLUDED.home_score,
-             away_score = EXCLUDED.away_score,
-             updated_at = now()
-      RETURNING home_score, away_score, points`;
+    const placed = await placePrediction(this.predictions, {
+      userId,
+      matchId,
+      score: { home, away },
+    });
 
-    const [saved] = rows;
-    if (saved) {
-      return toPredictionView({
-        homeScore: saved.home_score,
-        awayScore: saved.away_score,
-        points: saved.points,
-      });
-    }
-
-    const exists = await this.db.match.count({ where: { id: matchId } });
-    if (!exists) throw notFound("MATCH_NOT_FOUND", "Jogo não encontrado.");
-    throw conflict("PREDICTION_LOCKED", "Bola rolou, palpite trancado.");
+    return toPredictionView({
+      homeScore: placed.score.home,
+      awayScore: placed.score.away,
+      points: placed.points,
+    });
   }
 
   /** O muro da galera: palpites dos membros do bolão, revelados depois do apito. */
@@ -72,18 +57,8 @@ export class PredictionsService {
   ): Promise<WallView> {
     await this.membership.requireMember(poolId, userId);
     const match = await this.matches.byId(userId, matchId);
-    // Mesmo predicado e mesmo relógio (o do Postgres) da trava em upsert():
-    // se o relógio da API adiantasse, daria para espiar o muro e ainda editar.
-    const [lock] = await this.db.$queryRaw<{ locked: boolean }[]>`
-      SELECT NOT (status = 'scheduled' AND kickoff_at > now()) AS locked
-        FROM matches
-       WHERE id = ${matchId}`;
-    if (!lock?.locked) {
-      throw conflict(
-        "PREDICTIONS_HIDDEN",
-        "Os palpites da galera aparecem quando a bola rolar.",
-      );
-    }
+    // A mesma leitura de janela da gravação: um predicado, um relógio.
+    await requirePredictionsVisible(this.predictions, matchId);
 
     const members = await this.db.poolMember.findMany({
       where: { poolId },

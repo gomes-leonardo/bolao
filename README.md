@@ -32,11 +32,18 @@ Fora do escopo desta versão: tempo real, CI/CD e deploy (veja [Decisões e dív
 
 ```
 packages/core   regra de negócio compartilhada, contratos zod, schema e migrations do Prisma
+  src/domain      regras, erros, portas e casos de uso. Não conhece framework nem banco
+  src/adapters    implementações das portas (Prisma)
 cli/            importa jogos da football-data e registra resultados
-api/            API REST em NestJS
+api/            API REST em NestJS: HTTP, DI e tradução de erro de domínio em resposta
 web/            front em React + Vite + Tailwind (identidade Carimbou)
 docs/           ADRs, dívida técnica e contrato da autenticação
 ```
+
+A dependência aponta para dentro: o adapter conhece o domínio, o domínio não conhece o adapter.
+Quem garante isso são as regras de import no `eslint.config.js`, não um combinado —
+[ADR 0008](docs/adr/0008-camadas-e-direcao-das-dependencias.md) explica as camadas, como a
+direção é verificada e onde a camada **não** entra. Hoje só o fluxo do palpite está migrado.
 
 ## Rodando do zero
 
@@ -190,6 +197,7 @@ O Prisma Migrate é forward-only: desfazer uma migration já aplicada é escreve
 ## Decisões e dívidas
 
 - [ADRs](docs/adr/): monorepo com `core` em TS-fonte, Prisma com CHECKs à mão, palpite global com
-  pontos gravados, trava no SQL, costura da auth, polling em vez de tempo real e a identidade Carimbou.
+  pontos gravados, trava no SQL, costura da auth, polling em vez de tempo real, a identidade
+  Carimbou e as camadas com a direção das dependências verificada por lint.
 - [Dívida técnica e próximos passos](docs/divida-tecnica.md), incluindo o espaço "o que eu aprendi".
 - [Contrato da autenticação](docs/auth-contract.md) (fase 4).

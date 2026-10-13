@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./contracts": "./src/contracts/index.ts",
+    "./domain": "./src/domain/index.ts",
     "./scoring": "./src/scoring/score-prediction.ts",
     "./auth": "./src/auth/password.ts",
     "./prisma": "./src/prisma.ts",

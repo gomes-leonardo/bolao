@@ -3,6 +3,11 @@ import {
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
+import {
+  MatchNotFoundError,
+  PredictionLockedError,
+  PredictionsHiddenError,
+} from "@bolao/core/domain";
 import type { Response } from "express";
 import { describe, expect, it } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
@@ -54,6 +59,35 @@ describe("toErrorResponse", () => {
           message: "Corpo da requisição grande demais.",
         },
       },
+    });
+  });
+
+  // O domínio lança erro que não conhece status nem ApiErrorCode. Estes três
+  // casos são a costura que impede o contrato HTTP de derivar quando a regra
+  // migra para o domínio: as mensagens são exatamente as que a API já devolvia.
+  it.each([
+    [
+      new MatchNotFoundError(980011),
+      404,
+      "MATCH_NOT_FOUND",
+      "Jogo não encontrado.",
+    ],
+    [
+      new PredictionLockedError(980011),
+      409,
+      "PREDICTION_LOCKED",
+      "Bola rolou, palpite trancado.",
+    ],
+    [
+      new PredictionsHiddenError(980011),
+      409,
+      "PREDICTIONS_HIDDEN",
+      "Os palpites da galera aparecem quando a bola rolar.",
+    ],
+  ])("traduz o erro de domínio %s", (error, status, code, message) => {
+    expect(toErrorResponse(error)).toEqual({
+      status,
+      body: { error: { code, message } },
     });
   });
 
