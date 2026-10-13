@@ -1,17 +1,15 @@
 import { Inject, Injectable, type OnModuleInit } from "@nestjs/common";
-import type { Db } from "@bolao/core";
 import { hashPassword, verifyPassword } from "@bolao/core/auth";
 import type {
   AuthSession,
   LoginInput,
   RegisterInput,
-  UserView,
 } from "@bolao/core/contracts";
+import type { UsersGateway } from "@bolao/core/domain";
 import { emailTaken, invalidCredentials } from "../common/errors.js";
-import { violatedUniqueConstraint } from "@bolao/core";
-import { DB } from "../db/db.module.js";
 import { AUTH_CONFIG, type AuthConfig } from "./auth-config.js";
 import { TokenService } from "./token.service.js";
+import { USERS_GATEWAY } from "./users-gateway.provider.js";
 
 const SENTINEL_PASSWORD = "sentinel-carimbou";
 
@@ -20,7 +18,7 @@ export class AuthService implements OnModuleInit {
   private sentinelHash = "";
 
   constructor(
-    @Inject(DB) private readonly db: Db,
+    @Inject(USERS_GATEWAY) private readonly users: UsersGateway,
     @Inject(AUTH_CONFIG) private readonly config: AuthConfig,
     private readonly tokens: TokenService,
   ) {}
@@ -34,32 +32,22 @@ export class AuthService implements OnModuleInit {
   }
 
   async register(input: RegisterInput): Promise<AuthSession> {
-    let user: UserView;
-    try {
-      user = await this.db.user.create({
-        data: {
-          name: input.name,
-          email: input.email,
-          passwordHash: await hashPassword(
-            input.password,
-            this.config.bcryptRounds,
-          ),
-        },
-        select: { id: true, name: true, email: true },
-      });
-    } catch (error) {
-      if (violatedUniqueConstraint(error) === "users_email_key")
-        throw emailTaken();
-      throw error;
-    }
+    const user = await this.users.createUnlessEmailTaken({
+      name: input.name,
+      email: input.email,
+      passwordHash: await hashPassword(
+        input.password,
+        this.config.bcryptRounds,
+      ),
+    });
+    if (!user) throw emailTaken();
     return { user, accessToken: await this.tokens.sign(user.id) };
   }
 
   async login(input: LoginInput): Promise<AuthSession> {
-    const user = await this.db.user.findUnique({
-      where: { email: input.email },
-      select: { id: true, name: true, email: true, passwordHash: true },
-    });
+    const user = await this.users.findCredentialsByEmail(input.email);
+    // Os dois ramos comparam uma senha: e-mail que não existe compara contra o
+    // sentinela, para o tempo de resposta não dizer qual foi o caso.
     const hash = user?.passwordHash ?? this.sentinelHash;
     const ok = await verifyPassword(input.password, hash);
     if (!user || !ok) throw invalidCredentials();

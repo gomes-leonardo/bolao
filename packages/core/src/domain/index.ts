@@ -32,3 +32,9 @@ export {
 } from "./predictions/predictions-gateway.ts";
 export { placePrediction } from "./predictions/place-prediction.ts";
 export { requirePredictionsVisible } from "./predictions/reveal-predictions.ts";
+export {
+  type CreateUserCommand,
+  type UserCredentials,
+  type UserIdentity,
+  type UsersGateway,
+} from "./users/users-gateway.ts";

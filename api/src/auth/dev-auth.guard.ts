@@ -5,12 +5,12 @@ import {
   Injectable,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import type { Db } from "@bolao/core";
 import { MAX_ID } from "@bolao/core/contracts";
+import type { UsersGateway } from "@bolao/core/domain";
 import type { Request } from "express";
 import { unauthenticated } from "../common/errors.js";
-import { DB } from "../db/db.module.js";
 import { IS_PUBLIC } from "./public.decorator.js";
+import { USERS_GATEWAY } from "./users-gateway.provider.js";
 
 export const DEV_USER_HEADER = "x-dev-user-id";
 
@@ -23,7 +23,7 @@ export const DEV_USER_HEADER = "x-dev-user-id";
 export class DevAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    @Inject(DB) private readonly db: Db,
+    @Inject(USERS_GATEWAY) private readonly users: UsersGateway,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -46,13 +46,11 @@ export class DevAuthGuard implements CanActivate {
         "Envie o header X-Dev-User-Id com o id do usuário.",
       );
     }
-    const user = await this.db.user.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-    if (!user) throw unauthenticated(`Usuário ${id} não existe.`);
+    if (!(await this.users.exists(id))) {
+      throw unauthenticated(`Usuário ${id} não existe.`);
+    }
 
-    request.user = user;
+    request.user = { id };
     return true;
   }
 }
