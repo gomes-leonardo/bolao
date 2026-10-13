@@ -1,5 +1,6 @@
 import {
   MatchNotFoundError,
+  NoMatchesImportedError,
   NotPoolOwnerError,
   PoolNotVisibleError,
   PredictionLockedError,
@@ -28,6 +29,12 @@ import { conflict, forbidden, notFound, type AppError } from "./errors.js";
 export function toAppError(error: unknown): AppError | undefined {
   if (error instanceof MatchNotFoundError)
     return notFound("MATCH_NOT_FOUND", "Jogo não encontrado.");
+
+  if (error instanceof NoMatchesImportedError)
+    return notFound(
+      "NOT_FOUND",
+      `Nenhum jogo de ${error.season} importado ainda. Rode o CLI.`,
+    );
 
   if (error instanceof PoolNotVisibleError)
     return notFound("POOL_NOT_FOUND", "Bolão não encontrado.");

@@ -1,3 +1,4 @@
+export { createPrismaMatchesGateway } from "./adapters/prisma/prisma-matches-gateway.ts";
 export { createPrismaMembershipGateway } from "./adapters/prisma/prisma-membership-gateway.ts";
 export { createPrismaPredictionsGateway } from "./adapters/prisma/prisma-predictions-gateway.ts";
 export { createPrismaRankingGateway } from "./adapters/prisma/prisma-ranking-gateway.ts";

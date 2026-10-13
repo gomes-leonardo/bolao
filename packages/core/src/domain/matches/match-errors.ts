@@ -17,3 +17,20 @@ export class MatchNotFoundError extends Error {
     this.matchId = matchId;
   }
 }
+
+/**
+ * A temporada não tem jogo nenhum importado.
+ *
+ * Distinto do `MatchNotFoundError`: ali um jogo específico não existe; aqui o
+ * banco está vazio para a temporada e a ação do usuário é rodar o CLI. A borda
+ * traduz os dois para 404, com mensagens diferentes.
+ */
+export class NoMatchesImportedError extends Error {
+  readonly season: number;
+
+  constructor(season: number) {
+    super(`Nenhum jogo de ${season} importado`);
+    this.name = "NoMatchesImportedError";
+    this.season = season;
+  }
+}

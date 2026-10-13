@@ -6,7 +6,21 @@
  * subpath `@bolao/core/domain` publica, e é por isso que importá-lo não arrasta
  * o Prisma para quem consome.
  */
-export { MatchNotFoundError } from "./matches/match-errors.ts";
+export {
+  currentRoundOf,
+  pendingPredictionsOf,
+} from "./matches/current-round.ts";
+export {
+  MatchNotFoundError,
+  NoMatchesImportedError,
+} from "./matches/match-errors.ts";
+export {
+  type MatchRow,
+  type MatchesGateway,
+  type PredictionRecord,
+  type TeamRecord,
+  type WallRow,
+} from "./matches/matches-gateway.ts";
 export {
   NotPoolOwnerError,
   PoolNotVisibleError,
