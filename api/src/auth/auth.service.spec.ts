@@ -1,8 +1,10 @@
-import type { Db } from "@bolao/core";
 import { hashPassword, verifyPassword } from "@bolao/core/auth";
-import { Prisma } from "@bolao/core/prisma";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
+import {
+  fakeUsersGateway,
+  type FakeUsersSetup,
+} from "./__fixtures__/fake-users-gateway.js";
 import { AuthService } from "./auth.service.js";
 import type { TokenService } from "./token.service.js";
 
@@ -15,17 +17,6 @@ vi.mock("@bolao/core/auth", () => ({
 const hash = vi.mocked(hashPassword);
 const verify = vi.mocked(verifyPassword);
 
-const emailTakenError = () =>
-  new Prisma.PrismaClientKnownRequestError("falhou", {
-    code: "P2002",
-    clientVersion: "7.10.0",
-    meta: {
-      driverAdapterError: {
-        cause: { constraint: { index: "users_email_key" } },
-      },
-    },
-  });
-
 const leo = {
   id: 7,
   name: "Leo",
@@ -33,16 +24,16 @@ const leo = {
   passwordHash: "hash-do-leo",
 };
 
-function makeSut() {
-  const db = mockDeep<Db>();
+function makeSut(setup: FakeUsersSetup = {}) {
+  const users = fakeUsersGateway(setup);
   const tokens = mockDeep<TokenService>();
   tokens.sign.mockResolvedValue("token-assinado");
   const sut = new AuthService(
-    db,
+    users,
     { accessSecret: "segredo", bcryptRounds: 4 },
     tokens,
   );
-  return { sut, db, tokens };
+  return { sut, users, tokens };
 }
 
 describe("AuthService", () => {
@@ -54,9 +45,8 @@ describe("AuthService", () => {
 
   describe("login", () => {
     it("e-mail inexistente compara contra o sentinela, uma única vez", async () => {
-      const { sut, db } = makeSut();
+      const { sut } = makeSut({ credentials: null });
       await sut.onModuleInit();
-      db.user.findUnique.mockResolvedValue(null);
 
       await expect(
         sut.login({ email: "ninguem@carimbou.dev", password: "senha1234" }),
@@ -65,9 +55,8 @@ describe("AuthService", () => {
     });
 
     it("senha errada compara contra o hash do usuário, uma única vez", async () => {
-      const { sut, db } = makeSut();
+      const { sut } = makeSut({ credentials: leo });
       await sut.onModuleInit();
-      db.user.findUnique.mockResolvedValue(leo as never);
 
       await expect(
         sut.login({ email: leo.email, password: "senha-errada" }),
@@ -76,11 +65,8 @@ describe("AuthService", () => {
     });
 
     it("devolve o mesmo erro nos dois ramos", async () => {
-      const { sut, db } = makeSut();
+      const { sut } = makeSut({ credentialsQueue: [null, leo] });
       await sut.onModuleInit();
-      db.user.findUnique
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(leo as never);
 
       const miss = await sut
         .login({ email: "ninguem@carimbou.dev", password: "senha1234" })
@@ -105,9 +91,8 @@ describe("AuthService", () => {
     });
 
     it("entra e devolve a sessão sem vazar o hash", async () => {
-      const { sut, db } = makeSut();
+      const { sut } = makeSut({ credentials: leo });
       await sut.onModuleInit();
-      db.user.findUnique.mockResolvedValue(leo as never);
       verify.mockResolvedValue(true);
 
       const session = await sut.login({
@@ -125,13 +110,10 @@ describe("AuthService", () => {
 
   describe("register", () => {
     it("cria com a senha hasheada e devolve a sessão", async () => {
-      const { sut, db } = makeSut();
       hash.mockResolvedValue("hash-gerado");
-      db.user.create.mockResolvedValue({
-        id: 9,
-        name: "Bia",
-        email: "bia@carimbou.dev",
-      } as never);
+      const { sut, users } = makeSut({
+        created: { id: 9, name: "Bia", email: "bia@carimbou.dev" },
+      });
 
       const session = await sut.register({
         name: "Bia",
@@ -144,16 +126,19 @@ describe("AuthService", () => {
         accessToken: "token-assinado",
       });
       expect(hash.mock.calls).toEqual([["senha1234", 4]]);
-      expect(db.user.create.mock.calls[0]?.[0].data).toMatchObject({
-        name: "Bia",
-        email: "bia@carimbou.dev",
-        passwordHash: "hash-gerado",
-      });
+      expect(users.createCalls).toEqual([
+        {
+          name: "Bia",
+          email: "bia@carimbou.dev",
+          passwordHash: "hash-gerado",
+        },
+      ]);
     });
 
-    it("traduz a violação de e-mail único em EMAIL_TAKEN", async () => {
-      const { sut, db } = makeSut();
-      db.user.create.mockRejectedValue(emailTakenError());
+    it("traduz e-mail já usado em EMAIL_TAKEN", async () => {
+      // A porta devolve `null`; saber que isso veio de um P2002 em
+      // users_email_key é conhecimento do adapter, e para lá.
+      const { sut } = makeSut({ created: null });
 
       await expect(
         sut.register({
@@ -165,8 +150,7 @@ describe("AuthService", () => {
     });
 
     it("propaga erros que não são de e-mail duplicado", async () => {
-      const { sut, db } = makeSut();
-      db.user.create.mockRejectedValue(new Error("banco fora"));
+      const { sut } = makeSut({ createThrows: new Error("banco fora") });
 
       await expect(
         sut.register({

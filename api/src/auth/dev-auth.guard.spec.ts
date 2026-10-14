@@ -1,18 +1,19 @@
-import type { Db } from "@bolao/core";
 import type { ExecutionContext } from "@nestjs/common";
 import type { Reflector } from "@nestjs/core";
 import type { Request } from "express";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
+import { fakeUsersGateway } from "./__fixtures__/fake-users-gateway.js";
 import { DevAuthGuard } from "./dev-auth.guard.js";
 
 function makeSut({
   isPublic = false,
   header,
-}: { isPublic?: boolean; header?: string } = {}) {
+  exists = false,
+}: { isPublic?: boolean; header?: string; exists?: boolean } = {}) {
   const reflector = mockDeep<Reflector>();
   reflector.getAllAndOverride.mockReturnValue(isPublic);
-  const db = mockDeep<Db>();
+  const users = fakeUsersGateway({ exists });
   const request = { header: () => header } as unknown as Request;
   const context = mockDeep<ExecutionContext>();
   context.switchToHttp.mockReturnValue({
@@ -20,7 +21,7 @@ function makeSut({
     getResponse: () => ({}),
     getNext: () => () => undefined,
   } as never);
-  return { sut: new DevAuthGuard(reflector, db), db, request, context };
+  return { sut: new DevAuthGuard(reflector, users), users, request, context };
 }
 
 describe("DevAuthGuard", () => {
@@ -50,17 +51,20 @@ describe("DevAuthGuard", () => {
   it.each([undefined, "", "abc", "0", "-3", "1.5", "99999999999"])(
     "recusa header inválido: %s",
     async (header) => {
-      const { sut, context } = makeSut(header === undefined ? {} : { header });
+      const { sut, users, context } = makeSut(
+        header === undefined ? {} : { header },
+      );
 
       await expect(sut.canActivate(context)).rejects.toMatchObject({
         status: 401,
       });
+      // Header inválido nem chega ao banco.
+      expect(users.existsCalls).toEqual([]);
     },
   );
 
   it("recusa usuário que não existe", async () => {
-    const { sut, db, context } = makeSut({ header: "42" });
-    db.user.findUnique.mockResolvedValue(null);
+    const { sut, context } = makeSut({ header: "42", exists: false });
 
     await expect(sut.canActivate(context)).rejects.toMatchObject({
       status: 401,
@@ -69,13 +73,13 @@ describe("DevAuthGuard", () => {
   });
 
   it("preenche request.user com o usuário do header", async () => {
-    const { sut, db, request, context } = makeSut({ header: "7" });
-    db.user.findUnique.mockResolvedValue({ id: 7 } as never);
+    const { sut, users, request, context } = makeSut({
+      header: "7",
+      exists: true,
+    });
 
     await expect(sut.canActivate(context)).resolves.toBe(true);
-    expect(db.user.findUnique.mock.calls).toEqual([
-      [{ where: { id: 7 }, select: { id: true } }],
-    ]);
+    expect(users.existsCalls).toEqual([7]);
     expect(request.user).toEqual({ id: 7 });
   });
 });

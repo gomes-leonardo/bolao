@@ -43,7 +43,7 @@ docs/           ADRs, dívida técnica e contrato da autenticação
 A dependência aponta para dentro: o adapter conhece o domínio, o domínio não conhece o adapter.
 Quem garante isso são as regras de import no `eslint.config.js`, não um combinado —
 [ADR 0008](docs/adr/0008-camadas-e-direcao-das-dependencias.md) explica as camadas, como a
-direção é verificada e onde a camada **não** entra. Hoje só o fluxo do palpite está migrado.
+direção é verificada e onde a camada **não** entra.
 
 ## Rodando do zero
 

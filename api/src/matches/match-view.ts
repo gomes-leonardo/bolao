@@ -1,73 +1,33 @@
-import type { MatchStatus } from "@bolao/core";
-import type {
-  MatchView,
-  PredictionView,
-  TeamView,
-} from "@bolao/core/contracts";
+import type { MatchView } from "@bolao/core/contracts";
+import type { MatchRow } from "@bolao/core/domain";
 
-export const teamSelect = {
-  id: true,
-  name: true,
-  shortName: true,
-  tla: true,
-  crestUrl: true,
-} as const;
-
-export const predictionSelect = {
-  homeScore: true,
-  awayScore: true,
-  points: true,
-} as const;
-
-interface MatchRecord {
-  id: number;
-  season: number;
-  round: number;
-  kickoffAt: Date;
-  status: string;
-  homeScore: number | null;
-  awayScore: number | null;
-  homeTeam: TeamView;
-  awayTeam: TeamView;
-}
-
-interface PredictionRecord {
-  homeScore: number;
-  awayScore: number;
-  points: number | null;
-}
-
-export const isLocked = (
-  match: { status: string; kickoffAt: Date },
-  now: Date,
-) => match.status !== "scheduled" || match.kickoffAt <= now;
-
-export const toPredictionView = (
-  prediction: PredictionRecord,
-): PredictionView => ({
-  home: prediction.homeScore,
-  away: prediction.awayScore,
-  points: prediction.points,
-});
-
-export function toMatchView(
-  match: MatchRecord,
-  myPrediction: PredictionRecord | undefined,
-  now: Date,
-): MatchView {
+/**
+ * Do jogo do domínio para o formato de fio.
+ *
+ * Não calcula mais nada. `locked` já vem avaliado pelo adapter, pelo mesmo
+ * fragmento SQL da gravação e com o relógio do Postgres. O `isLocked` que
+ * morava aqui era a terceira cópia da regra da janela, em TypeScript e com o
+ * relógio da aplicação — inofensivo enquanto só exibia, e bug no dia em que
+ * autorizasse algo (ADR 0008).
+ *
+ * `myPrediction` passa direto: o `PredictionRecord` do domínio e o
+ * `PredictionView` do contrato são estruturalmente idênticos, e se o contrato
+ * mudar o typecheck quebra aqui, na borda.
+ */
+export function toMatchView(match: MatchRow): MatchView {
   return {
     id: match.id,
     season: match.season,
     round: match.round,
     kickoffAt: match.kickoffAt.toISOString(),
-    status: match.status as MatchStatus,
-    locked: isLocked(match, now),
+    status: match.status,
+    locked: match.locked,
     homeTeam: match.homeTeam,
     awayTeam: match.awayTeam,
     score:
       match.homeScore === null || match.awayScore === null
         ? null
         : { home: match.homeScore, away: match.awayScore },
-    myPrediction: myPrediction ? toPredictionView(myPrediction) : null,
+    myPrediction: match.myPrediction,
   };
 }

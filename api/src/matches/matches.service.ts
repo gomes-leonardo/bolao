@@ -1,90 +1,44 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Db } from "@bolao/core";
-import type { MatchView, RoundView } from "@bolao/core/contracts";
-import { notFound } from "../common/errors.js";
+import type { MatchView, RoundView, WallEntry } from "@bolao/core/contracts";
+import { MatchNotFoundError } from "@bolao/core/domain";
 import { currentSeason } from "../common/season.js";
-import { DB } from "../db/db.module.js";
-import { predictionSelect, teamSelect, toMatchView } from "./match-view.js";
+import { toMatchView } from "./match-view.js";
+import { MATCHES, type Matches } from "./matches.provider.js";
 
+/**
+ * A borda dos jogos: resolve a temporada corrente e passa do domínio para o
+ * formato de fio. Nenhuma regra mora aqui.
+ */
 @Injectable()
 export class MatchesService {
-  constructor(@Inject(DB) private readonly db: Db) {}
+  constructor(@Inject(MATCHES) private readonly matches: Matches) {}
 
-  /** Rodada do próximo jogo ainda não encerrado; se a temporada acabou, a última. */
-  async findCurrentRound(season: number): Promise<number | null> {
-    const next = await this.db.match.findFirst({
-      where: { season, status: { in: ["scheduled", "live"] } },
-      orderBy: { kickoffAt: "asc" },
-      select: { round: true },
-    });
-    if (next) return next.round;
-
-    const last = await this.db.match.findFirst({
-      where: { season },
-      orderBy: { round: "desc" },
-      select: { round: true },
-    });
-    return last?.round ?? null;
-  }
-
-  async currentRound(season: number): Promise<number> {
-    const round = await this.findCurrentRound(season);
-    if (round === null) {
-      throw notFound(
-        "NOT_FOUND",
-        `Nenhum jogo de ${season} importado ainda. Rode o CLI.`,
-      );
-    }
-    return round;
+  currentRound(season: number): Promise<number> {
+    return this.matches.currentRound(season);
   }
 
   async round(userId: number, round?: number): Promise<RoundView> {
     const season = currentSeason();
-    const selected = round ?? (await this.currentRound(season));
-    const matches = await this.db.match.findMany({
-      where: { season, round: selected },
-      orderBy: [{ kickoffAt: "asc" }, { id: "asc" }],
-      include: this.includeFor(userId),
-    });
-    const now = new Date();
-    return {
-      season,
-      round: selected,
-      matches: matches.map((match) =>
-        toMatchView(match, match.predictions[0], now),
-      ),
-    };
+    const selected = round ?? (await this.matches.currentRound(season));
+    const matches = await this.matches.matchesOfRound(userId, season, selected);
+    return { season, round: selected, matches: matches.map(toMatchView) };
   }
 
   async byId(userId: number, matchId: number): Promise<MatchView> {
-    const match = await this.db.match.findUnique({
-      where: { id: matchId },
-      include: this.includeFor(userId),
-    });
-    if (!match) throw notFound("MATCH_NOT_FOUND", "Jogo não encontrado.");
-    return toMatchView(match, match.predictions[0], new Date());
+    const match = await this.matches.matchById(userId, matchId);
+    if (!match) throw new MatchNotFoundError(matchId);
+    return toMatchView(match);
   }
 
-  /** Jogos da rodada atual que ainda aceitam palpite e o usuário não palpitou. */
-  async pendingPredictions(userId: number, season: number): Promise<number> {
-    const round = await this.findCurrentRound(season);
-    if (round === null) return 0;
-    return this.db.match.count({
-      where: {
-        season,
-        round,
-        status: "scheduled",
-        kickoffAt: { gt: new Date() },
-        predictions: { none: { userId } },
-      },
-    });
+  pendingPredictions(userId: number, season: number): Promise<number> {
+    return this.matches.pendingPredictions(userId, season);
   }
 
-  private includeFor(userId: number) {
-    return {
-      homeTeam: { select: teamSelect },
-      awayTeam: { select: teamSelect },
-      predictions: { where: { userId }, select: predictionSelect },
-    } as const;
+  /**
+   * As linhas do muro. `WallRow` e `WallEntry` são estruturalmente idênticos,
+   * então a anotação de retorno é a única conversão necessária.
+   */
+  wallEntries(poolId: number, matchId: number): Promise<WallEntry[]> {
+    return this.matches.wallEntriesOf(poolId, matchId);
   }
 }

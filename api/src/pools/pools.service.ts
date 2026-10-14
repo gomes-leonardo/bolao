@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Db } from "@bolao/core";
 import type {
   MemberView,
   Paginated,
@@ -7,68 +6,54 @@ import type {
   PoolSummary,
   RankingView,
 } from "@bolao/core/contracts";
-import { conflict, forbidden, notFound } from "../common/errors.js";
+import { PoolNotVisibleError, summarizePool } from "@bolao/core/domain";
 import { paginated, skipOf } from "../common/pagination.js";
-import { violatedUniqueConstraint } from "../common/prisma-errors.js";
 import { currentSeason } from "../common/season.js";
-import { DB } from "../db/db.module.js";
 import { MatchesService } from "../matches/matches.service.js";
-import { MembershipService } from "../membership/membership.service.js";
+import {
+  MEMBERSHIP,
+  type Membership,
+} from "../membership/membership.provider.js";
 import { RankingService } from "../ranking/ranking.service.js";
-import { generateInviteCode } from "./invite-code.js";
+import { POOLS, type Pools } from "./pools.provider.js";
 
-const MAX_INVITE_CODE_ATTEMPTS = 5;
-
+/**
+ * A borda dos bolões.
+ *
+ * Nenhuma regra mora aqui. O que sobrou é autorização delegada, paginação, o
+ * fan-out das leituras do resumo e a passagem do domínio para o formato de fio.
+ */
 @Injectable()
 export class PoolsService {
   constructor(
-    @Inject(DB) private readonly db: Db,
-    private readonly membership: MembershipService,
+    @Inject(POOLS) private readonly pools: Pools,
+    @Inject(MEMBERSHIP) private readonly membership: Membership,
     private readonly ranking: RankingService,
     private readonly matches: MatchesService,
   ) {}
 
   async create(userId: number, name: string): Promise<PoolSummary> {
-    for (let attempt = 1; ; attempt++) {
-      try {
-        const pool = await this.db.pool.create({
-          data: {
-            name,
-            inviteCode: generateInviteCode(),
-            ownerId: userId,
-            season: currentSeason(),
-            members: { create: { userId } },
-          },
-          select: { id: true },
-        });
-        return this.summary(userId, pool.id);
-      } catch (error) {
-        const codeTaken =
-          violatedUniqueConstraint(error) === "pools_invite_code_key";
-        if (!codeTaken || attempt >= MAX_INVITE_CODE_ATTEMPTS) throw error;
-      }
-    }
+    const { id } = await this.pools.create({
+      ownerId: userId,
+      name,
+      season: currentSeason(),
+    });
+    return this.summary(userId, id);
   }
 
   async list(
     userId: number,
     pagination: PaginationInput,
   ): Promise<Paginated<PoolSummary>> {
-    const where = { userId };
-    const [total, memberships] = await Promise.all([
-      this.db.poolMember.count({ where }),
-      this.db.poolMember.findMany({
-        where,
-        orderBy: [{ joinedAt: "desc" }, { poolId: "desc" }],
-        skip: skipOf(pagination),
-        take: pagination.pageSize,
-        select: { poolId: true },
-      }),
+    const [total, poolIds] = await Promise.all([
+      this.pools.countMemberships(userId),
+      this.pools.membershipPoolIds(
+        userId,
+        skipOf(pagination),
+        pagination.pageSize,
+      ),
     ]);
-    const summaries = await this.summaries(
-      userId,
-      memberships.map((membership) => membership.poolId),
-    );
+    const summaries = await this.summaries(userId, poolIds);
     return paginated(summaries, total, pagination);
   }
 
@@ -83,30 +68,18 @@ export class PoolsService {
     name: string,
   ): Promise<PoolSummary> {
     await this.membership.requireOwner(poolId, userId);
-    await this.db.pool.update({ where: { id: poolId }, data: { name } });
+    await this.pools.rename(poolId, name);
     return this.summary(userId, poolId);
   }
 
   async remove(userId: number, poolId: number): Promise<void> {
     await this.membership.requireOwner(poolId, userId);
-    await this.db.pool.delete({ where: { id: poolId } });
+    await this.pools.deletePool(poolId);
   }
 
   async join(userId: number, inviteCode: string): Promise<PoolSummary> {
-    const pool = await this.db.pool.findUnique({
-      where: { inviteCode },
-      select: { id: true },
-    });
-    if (!pool)
-      throw notFound("POOL_NOT_FOUND", "Nenhum bolão com esse código.");
-
-    // INSERT ... ON CONFLICT DO NOTHING: dois cliques simultâneos não viram erro 500.
-    const { count } = await this.db.poolMember.createMany({
-      data: [{ poolId: pool.id, userId }],
-      skipDuplicates: true,
-    });
-    if (count === 0) throw conflict("ALREADY_MEMBER", "Tu já tá nesse bolão.");
-    return this.summary(userId, pool.id);
+    const { poolId } = await this.pools.join(inviteCode, userId);
+    return this.summary(userId, poolId);
   }
 
   async members(
@@ -115,53 +88,28 @@ export class PoolsService {
     pagination: PaginationInput,
   ): Promise<Paginated<MemberView>> {
     const pool = await this.membership.requireMember(poolId, userId);
-    const where = { poolId };
     const [total, members] = await Promise.all([
-      this.db.poolMember.count({ where }),
-      this.db.poolMember.findMany({
-        where,
-        orderBy: [{ joinedAt: "asc" }, { userId: "asc" }],
-        skip: skipOf(pagination),
-        take: pagination.pageSize,
-        select: { joinedAt: true, user: { select: { id: true, name: true } } },
-      }),
+      this.pools.countMembers(poolId),
+      this.pools.listMembers(poolId, skipOf(pagination), pagination.pageSize),
     ]);
     return paginated(
-      members.map(({ joinedAt, user }) => ({
-        id: user.id,
-        name: user.name,
-        isOwner: user.id === pool.ownerId,
-        joinedAt: joinedAt.toISOString(),
+      members.map((member) => ({
+        id: member.id,
+        name: member.name,
+        isOwner: member.id === pool.ownerId,
+        joinedAt: member.joinedAt.toISOString(),
       })),
       total,
       pagination,
     );
   }
 
-  /** O dono remove qualquer membro; o membro pode sair sozinho; o dono não sai. */
-  async removeMember(
+  removeMember(
     actorId: number,
     poolId: number,
     memberId: number,
   ): Promise<void> {
-    const pool = await this.membership.requireMember(poolId, actorId);
-    if (memberId === pool.ownerId) {
-      throw conflict(
-        "OWNER_CANNOT_LEAVE",
-        "O dono não sai do próprio bolão. Se quiser acabar com ele, apaga o bolão.",
-      );
-    }
-    if (actorId !== memberId && actorId !== pool.ownerId) {
-      throw forbidden(
-        "NOT_OWNER",
-        "Só o dono do bolão pode remover outros membros.",
-      );
-    }
-    const { count } = await this.db.poolMember.deleteMany({
-      where: { poolId, userId: memberId },
-    });
-    if (count === 0)
-      throw notFound("MEMBER_NOT_FOUND", "Essa pessoa não está no bolão.");
+    return this.pools.removeMember({ actorId, poolId, memberId });
   }
 
   async rankingOf(
@@ -181,26 +129,25 @@ export class PoolsService {
 
   private async summary(userId: number, poolId: number): Promise<PoolSummary> {
     const [summary] = await this.summaries(userId, [poolId]);
-    if (!summary) throw notFound("POOL_NOT_FOUND", "Bolão não encontrado.");
+    if (!summary) throw new PoolNotVisibleError(poolId);
     return summary;
   }
 
+  /**
+   * O fan-out do resumo: três leituras, uma delas deduplicada por temporada
+   * para não repetir a conta de pendências por bolão.
+   *
+   * O `flatMap` sobre `poolIds` é load-bearing: ele preserva a ordem da
+   * paginação, que vem de `membershipPoolIds`. `poolsByIds` devolve na ordem do
+   * banco, e trocar um pelo outro embaralharia a lista entre páginas sem
+   * quebrar nenhum teste — o de integração ordena antes de comparar.
+   */
   private async summaries(
     userId: number,
     poolIds: number[],
   ): Promise<PoolSummary[]> {
     const [pools, standings] = await Promise.all([
-      this.db.pool.findMany({
-        where: { id: { in: poolIds } },
-        select: {
-          id: true,
-          name: true,
-          inviteCode: true,
-          season: true,
-          ownerId: true,
-          _count: { select: { members: true } },
-        },
-      }),
+      this.pools.poolsByIds(poolIds),
       this.ranking.standings(poolIds),
     ]);
 
@@ -216,19 +163,13 @@ export class PoolsService {
     return poolIds.flatMap((id) => {
       const pool = byId.get(id);
       if (!pool) return [];
-      const mine = standings.get(id)?.find((entry) => entry.user.id === userId);
       return [
-        {
-          id: pool.id,
-          name: pool.name,
-          inviteCode: pool.inviteCode,
-          season: pool.season,
-          isOwner: pool.ownerId === userId,
-          memberCount: pool._count.members,
-          myPosition: mine?.position ?? 0,
-          myPoints: mine?.points ?? 0,
-          pendingPredictions: pendingBySeason.get(pool.season) ?? 0,
-        },
+        summarizePool(
+          pool,
+          userId,
+          standings.get(id) ?? [],
+          pendingBySeason.get(pool.season) ?? 0,
+        ),
       ];
     });
   }

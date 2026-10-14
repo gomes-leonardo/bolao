@@ -1,29 +1,26 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Db } from "@bolao/core";
 import type {
   PredictionView,
   UpsertPredictionInput,
   WallView,
 } from "@bolao/core/contracts";
 import {
-  placePrediction,
-  requirePredictionsVisible,
-  type PredictionsGateway,
-} from "@bolao/core/domain";
-import { DB } from "../db/db.module.js";
-import { MembershipService } from "../membership/membership.service.js";
-import { predictionSelect, toPredictionView } from "./match-view.js";
+  MEMBERSHIP,
+  type Membership,
+} from "../membership/membership.provider.js";
 import { MatchesService } from "./matches.service.js";
-import { PREDICTION_GATEWAY } from "./prediction-gateway.provider.js";
+import {
+  PREDICTION_USE_CASES,
+  type PredictionUseCases,
+} from "./prediction-gateway.provider.js";
 
 @Injectable()
 export class PredictionsService {
   constructor(
-    @Inject(DB) private readonly db: Db,
-    @Inject(PREDICTION_GATEWAY)
-    private readonly predictions: PredictionsGateway,
+    @Inject(PREDICTION_USE_CASES)
+    private readonly predictions: PredictionUseCases,
     private readonly matches: MatchesService,
-    private readonly membership: MembershipService,
+    @Inject(MEMBERSHIP) private readonly membership: Membership,
   ) {}
 
   /**
@@ -36,17 +33,17 @@ export class PredictionsService {
     matchId: number,
     { home, away }: UpsertPredictionInput,
   ): Promise<PredictionView> {
-    const placed = await placePrediction(this.predictions, {
+    const placed = await this.predictions.place({
       userId,
       matchId,
       score: { home, away },
     });
 
-    return toPredictionView({
-      homeScore: placed.score.home,
-      awayScore: placed.score.away,
+    return {
+      home: placed.score.home,
+      away: placed.score.away,
       points: placed.points,
-    });
+    };
   }
 
   /** O muro da galera: palpites dos membros do bolão, revelados depois do apito. */
@@ -58,31 +55,9 @@ export class PredictionsService {
     await this.membership.requireMember(poolId, userId);
     const match = await this.matches.byId(userId, matchId);
     // A mesma leitura de janela da gravação: um predicado, um relógio.
-    await requirePredictionsVisible(this.predictions, matchId);
+    await this.predictions.requireVisible(matchId);
+    const entries = await this.matches.wallEntries(poolId, matchId);
 
-    const members = await this.db.poolMember.findMany({
-      where: { poolId },
-      orderBy: { user: { name: "asc" } },
-      select: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            predictions: { where: { matchId }, select: predictionSelect },
-          },
-        },
-      },
-    });
-
-    return {
-      match,
-      entries: members.map(({ user }) => {
-        const [prediction] = user.predictions;
-        return {
-          user: { id: user.id, name: user.name },
-          prediction: prediction ? toPredictionView(prediction) : null,
-        };
-      }),
-    };
+    return { match, entries };
   }
 }
